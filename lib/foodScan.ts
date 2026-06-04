@@ -30,7 +30,10 @@ const GROQ_VISION_MODEL = 'llama-3.2-11b-vision-preview'
 
 // Helper to convert URI to Base64
 async function uriToBase64(uri: string): Promise<string> {
-  if (uri.startsWith('data:image')) {
+  if (!uri) {
+    throw new Error('Image URI is null or empty')
+  }
+  if (typeof uri === 'string' && uri.startsWith('data:image')) {
     return uri
   }
   try {
@@ -227,6 +230,10 @@ export async function scanFoodPhoto(input: {
   // Client-side Groq Vision Integration (Real Multimodal AI Analysis)
   try {
     const apiKey = process.env.EXPO_PUBLIC_GROQ_API_KEY || GROQ_API_KEY || ''
+    if (!apiKey) {
+      console.warn('Groq API Key is not configured. Falling back to local keyword parser.')
+      return parseLocalDescription(input.description ?? '', input.mealType)
+    }
     const base64Image = await uriToBase64(input.imageUri)
     const contextPrompt = input.description ? ` The user describes the food as: "${input.description}".` : ''
 

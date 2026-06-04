@@ -144,6 +144,10 @@ export default function ExploreScreen() {
     function captureWebcamPhoto() {
         if (!videoRef.current) return
         const video = videoRef.current
+        if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {
+            showToast('Camera feed is still loading. Please try again in a moment.', 'error')
+            return
+        }
         const canvas = document.createElement('canvas')
         canvas.width = video.videoWidth || 640
         canvas.height = video.videoHeight || 480
