@@ -74,19 +74,38 @@ export default function ExploreScreen() {
 
     // Image scan trigger
     async function startScanFlow(source: 'camera' | 'library') {
-        const picker = source === 'camera' ? ImagePicker.launchCameraAsync : ImagePicker.launchImageLibraryAsync
-        const result = await picker({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: false,
-            quality: 0.85,
-        })
+        try {
+            if (source === 'camera') {
+                const { status } = await ImagePicker.requestCameraPermissionsAsync()
+                if (status !== 'granted') {
+                    showToast('Camera permission is required to capture photos.', 'error')
+                    return
+                }
+            } else {
+                const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+                if (status !== 'granted') {
+                    showToast('Photo library permission is required to upload images.', 'error')
+                    return
+                }
+            }
 
-        if (result.canceled || !result.assets[0]) return
+            const picker = source === 'camera' ? ImagePicker.launchCameraAsync : ImagePicker.launchImageLibraryAsync
+            const result = await picker({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: false,
+                quality: 0.85,
+            })
 
-        const asset = result.assets[0]
-        setScanImageUri(asset.uri)
-        setAiDescription('')
-        setIsAiAssistVisible(true)
+            if (result.canceled || !result.assets[0]) return
+
+            const asset = result.assets[0]
+            setScanImageUri(asset.uri)
+            setAiDescription('')
+            setIsAiAssistVisible(true)
+        } catch (err) {
+            console.error('Image picker error:', err)
+            showToast('Failed to access camera or library.', 'error')
+        }
     }
 
     // Run AI scanning parser
