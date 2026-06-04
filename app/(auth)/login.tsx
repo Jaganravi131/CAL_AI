@@ -67,7 +67,7 @@ export default function LoginScreen() {
 
   const [step, setStep] = useState<'email' | 'otp'>('email')
   const [email, setEmail] = useState('')
-  const [otp, setOtp] = useState(['', '', '', '', '', ''])
+  const [otp, setOtp] = useState(['', '', '', '', '', '', '', ''])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [cooldown, setCooldown] = useState(0)
@@ -125,7 +125,7 @@ export default function LoginScreen() {
   }
 
   const handleVerifyOtp = useCallback(async (code: string) => {
-    if (code.length < 6) return
+    if (code.length < 8) return
     if (lockoutEnd && Date.now() < lockoutEnd) {
       setError(`Too many attempts. Wait ${Math.ceil((lockoutEnd - Date.now()) / 60000)} minute(s).`)
       return
@@ -146,7 +146,7 @@ export default function LoginScreen() {
       } else {
         setError(`Invalid code. ${5 - next} attempt${5 - next === 1 ? '' : 's'} left.`)
       }
-      setOtp(['', '', '', '', '', ''])
+      setOtp(['', '', '', '', '', '', '', ''])
       setTimeout(() => otpRefs.current[0]?.focus(), 50)
       return
     }
@@ -159,9 +159,9 @@ export default function LoginScreen() {
     const next = [...otp]
     next[index] = digit
     setOtp(next)
-    if (digit && index < 5) otpRefs.current[index + 1]?.focus()
+    if (digit && index < 7) otpRefs.current[index + 1]?.focus()
     const code = next.join('')
-    if (code.length === 6 && !next.includes('')) handleVerifyOtp(code)
+    if (code.length === 8 && !next.includes('')) handleVerifyOtp(code)
   }
 
   const handleOtpKeyPress = (e: any, index: number) => {
@@ -180,12 +180,12 @@ export default function LoginScreen() {
     setLoading(false)
     if (err) { setError(err.message); return }
     setCooldown(60)
-    setOtp(['', '', '', '', '', ''])
+    setOtp(['', '', '', '', '', '', '', ''])
     setTimeout(() => otpRefs.current[0]?.focus(), 50)
   }
 
   const goBack = () => {
-    setStep('email'); setOtp(['', '', '', '', '', ''])
+    setStep('email'); setOtp(['', '', '', '', '', '', '', ''])
     setError(null); setFailedAttempts(0); setLockoutEnd(null)
     setTimeout(() => emailRef.current?.focus(), 150)
   }
@@ -276,7 +276,7 @@ export default function LoginScreen() {
                     {normalizeEmail(email)}
                   </Text>
                 </View>
-                <Text style={s.sub}>Enter the 6-digit code we sent. Check spam if needed.</Text>
+                <Text style={s.sub}>Enter the 8-digit code we sent. Check spam if needed.</Text>
               </View>
             )}
 
@@ -543,12 +543,12 @@ const s = StyleSheet.create({
   lockoutText: { color: '#fbbf24', fontSize: 13, fontWeight: '600' },
 
   // OTP
-  otpRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  otpRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 5 },
   otpBox: {
     flex: 1,
-    height: 56, backgroundColor: SURFACE,
-    borderWidth: 1, borderColor: BORDER, borderRadius: 12,
-    color: TEXT_PRIMARY, fontSize: 22, textAlign: 'center',
+    height: 48, backgroundColor: SURFACE,
+    borderWidth: 1, borderColor: BORDER, borderRadius: 10,
+    color: TEXT_PRIMARY, fontSize: 18, textAlign: 'center',
     textAlignVertical: 'center', paddingVertical: 0, paddingHorizontal: 0,
     includeFontPadding: false,
     fontFamily: Fonts.regular,
