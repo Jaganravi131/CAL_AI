@@ -15,7 +15,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import { Text } from '@/components/ui/Text'
-import { ACCENT, ACCENT_DIM, BG, BORDER } from '@/lib/theme'
+import { ACCENT, ACCENT_DIM, BG, BORDER, SURFACE, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_TERTIARY } from '@/lib/theme'
 import { APP_NAME, APP_TAGLINE, APP_DESCRIPTION } from '@/lib/constants'
 import { adjustBrightness } from '@/lib/utils'
 
@@ -95,8 +95,8 @@ export default function LandingScreen() {
             {/* Background gradient */}
             <LinearGradient
                 pointerEvents="none"
-                colors={[BG, '#0b1414', '#081010', BG]}
-                locations={[0, 0.3, 0.6, 1]}
+                colors={['#ffffff', BG, adjustBrightness(BG, -3), BG]}
+                locations={[0, 0.3, 0.7, 1]}
                 style={StyleSheet.absoluteFillObject}
             />
 
@@ -217,7 +217,7 @@ const s = StyleSheet.create({
         width: '95%',
         height: 58,
         borderRadius: 999,
-        backgroundColor: 'rgba(255,255,255,0.06)',
+        backgroundColor: 'rgba(0,0,0,0.02)',
         borderWidth: 1,
         borderColor: BORDER,
         flexDirection: 'row',
@@ -244,7 +244,7 @@ const s = StyleSheet.create({
         color: '#fff',
     },
     headerAppName: {
-        color: '#fff',
+        color: TEXT_PRIMARY,
         fontSize: 15,
         fontWeight: '700',
         letterSpacing: 0.1,
@@ -294,7 +294,7 @@ const s = StyleSheet.create({
         color: '#fff',
     },
     heroTitle: {
-        color: '#fff',
+        color: TEXT_PRIMARY,
         fontSize: 34,
         fontWeight: '800',
         letterSpacing: -0.8,
@@ -307,7 +307,7 @@ const s = StyleSheet.create({
         letterSpacing: 0.1,
     },
     heroDesc: {
-        color: 'rgba(255,255,255,0.48)',
+        color: TEXT_SECONDARY,
         fontSize: 14,
         lineHeight: 21,
         maxWidth: 320,
@@ -325,7 +325,7 @@ const s = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 14,
-        backgroundColor: 'rgba(255,255,255,0.04)',
+        backgroundColor: SURFACE,
         borderWidth: 1,
         borderColor: BORDER,
         borderRadius: 14,
@@ -345,12 +345,12 @@ const s = StyleSheet.create({
         gap: 2,
     },
     featureTitle: {
-        color: '#fff',
+        color: TEXT_PRIMARY,
         fontSize: 14,
         fontWeight: '700',
     },
     featureDesc: {
-        color: 'rgba(255,255,255,0.42)',
+        color: TEXT_SECONDARY,
         fontSize: 12.5,
     },
 
@@ -361,7 +361,7 @@ const s = StyleSheet.create({
         alignItems: 'center',
     },
     signInText: {
-        color: 'rgba(255,255,255,0.35)',
+        color: TEXT_SECONDARY,
         fontSize: 13,
     },
     signInLink: {
@@ -369,14 +369,14 @@ const s = StyleSheet.create({
         fontWeight: '600',
     },
     legal: {
-        color: 'rgba(255,255,255,0.22)',
+        color: TEXT_TERTIARY,
         textAlign: 'center',
         fontSize: 11,
         lineHeight: 17,
         paddingHorizontal: 8,
     },
     legalLink: {
-        color: 'rgba(255,255,255,0.38)',
+        color: TEXT_SECONDARY,
         textDecorationLine: 'underline',
     },
 })
