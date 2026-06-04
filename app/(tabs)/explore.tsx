@@ -122,6 +122,25 @@ export default function ExploreScreen() {
         await startWebcamStream(nextMode)
     }
 
+    async function triggerDirectAnalysis(imageUri: string) {
+        setIsScanning(true)
+        setIsAiAssistVisible(false)
+        try {
+            const scan = await scanFoodPhoto({ 
+                imageUri, 
+                mealType, 
+                description: '' 
+            })
+            setScanResult(scan)
+            setServingMultiplier(1)
+            showToast('Photo analyzed successfully!', 'success')
+        } catch (error) {
+            showToast('Could not analyze photo', 'error')
+        } finally {
+            setIsScanning(false)
+        }
+    }
+
     function captureWebcamPhoto() {
         if (!videoRef.current) return
         const video = videoRef.current
@@ -136,7 +155,7 @@ export default function ExploreScreen() {
             setIsWebCamVisible(false)
             setScanImageUri(dataUrl)
             setAiDescription('')
-            setIsAiAssistVisible(true)
+            triggerDirectAnalysis(dataUrl)
         } else {
             showToast('Failed to capture frame from webcam.', 'error')
         }
@@ -176,9 +195,10 @@ export default function ExploreScreen() {
             if (result.canceled || !result.assets[0]) return
 
             const asset = result.assets[0]
-            setScanImageUri(asset.uri)
+            const selectedUri = asset.uri
+            setScanImageUri(selectedUri)
             setAiDescription('')
-            setIsAiAssistVisible(true)
+            triggerDirectAnalysis(selectedUri)
         } catch (err) {
             console.error('Image picker error:', err)
             showToast('Failed to access camera or library.', 'error')
