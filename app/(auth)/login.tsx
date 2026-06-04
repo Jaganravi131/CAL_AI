@@ -5,7 +5,7 @@
  *   Google and Apple buttons are included with placeholder handlers.
  *   To wire them up:
  *     1. Configure Google/Apple OAuth in your Supabase project → Auth → Providers
- *     2. Add a redirect URL (e.g. myapp://auth/callback)
+ *     2. Add a redirect URL (e.g. cal-al://auth/callback)
  *     3. Install expo-web-browser and expo-auth-session
  *     4. Call supabase.auth.signInWithOAuth({ provider: 'google' }) in handleGoogleLogin
  *
@@ -197,7 +197,7 @@ export default function LoginScreen() {
 
   // ─── Social login handlers ───────────────────────────────────────────────────
   // Requires: Supabase → Auth → Providers → Google/Apple enabled
-  // Requires: app.json scheme = 'myapp' (already set) so deep link works
+  // Requires: app.json scheme = 'cal-al' (already set) so deep link works
 
   async function handleOAuthLogin(provider: 'google' | 'apple') {
     if (!isSupabaseEnabled) {

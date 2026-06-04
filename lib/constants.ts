@@ -11,10 +11,10 @@
  */
 
 /** Display name shown in headers, onboarding, and the landing page. */
-export const APP_NAME = 'Cal AI'
+export const APP_NAME = 'CAL-AL'
 
 /** URL scheme matching expo.scheme in app.json — used for OAuth deep link callbacks. */
-export const APP_SCHEME = 'myapp'
+export const APP_SCHEME = 'cal-al'
 
 /** Support email shown on the Support screen. */
 export const APP_SUPPORT_EMAIL = 'support@calai.co'

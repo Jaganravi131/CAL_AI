@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "MyApp",
-    "slug": "my-app",
+    "name": "CAL-AL",
+    "slug": "cal-al",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "myapp",
+    "scheme": "cal-al",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
@@ -14,13 +14,13 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.yourcompany.myapp",
+      "bundleIdentifier": "com.yourcompany.calal",
       "associatedDomains": [
         "applinks:REPLACE_WITH_YOUR_DOMAIN"
       ]
     },
     "android": {
-      "package": "com.yourcompany.myapp",
+      "package": "com.yourcompany.calal",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#0d0d0d"
@@ -41,7 +41,7 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            { "scheme": "myapp" }
+            { "scheme": "cal-al" }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
