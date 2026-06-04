@@ -154,7 +154,7 @@ export default function ExploreScreen() {
         const ctx = canvas.getContext('2d')
         if (ctx) {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.85)
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.3)
             stopWebcam()
             setIsWebCamVisible(false)
             setScanImageUri(dataUrl)
@@ -193,7 +193,7 @@ export default function ExploreScreen() {
             const result = await picker({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: false,
-                quality: 0.85,
+                quality: 0.3,
             })
 
             if (result.canceled || !result.assets[0]) return

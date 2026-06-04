@@ -26,7 +26,7 @@ export type FoodScanResult = {
 }
 
 const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY ?? ''
-const GROQ_VISION_MODEL = 'llama-3.2-11b-vision-preview'
+const GROQ_VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct'
 
 // Helper to convert URI to Base64
 async function uriToBase64(uri: string): Promise<string> {
