@@ -230,26 +230,32 @@ export async function scanFoodPhoto(input: {
     const base64Image = await uriToBase64(input.imageUri)
     const contextPrompt = input.description ? ` The user describes the food as: "${input.description}".` : ''
 
-    const promptText = `Analyze the food item(s) present in the attached image.${contextPrompt}
-Identify all visible ingredients, estimate their servings in grams, and calculate total calories, protein, carbs, and fat.
+    const promptText = `Act as an expert clinical dietitian and computer vision nutritionist. Analyze the food item(s) present in the attached image with high precision.
+${contextPrompt}
 
-You must return a JSON object matching this schema:
+Perform a detailed visual analysis of the portion sizes, density, and ingredients:
+1. Estimate each food component's weight (in grams) realistically using standard plate and portion sizing rules.
+2. Account for hidden fats, cooking oils, dressing, and sauces that are likely present but might not be explicitly mentioned.
+3. If the user provided a description context, use it to accurately determine ingredients, cooking methods, or specific food types.
+4. Calculate precise macronutrient estimates (protein, carbs, fat in grams) and total calories based on USDA nutrition databases.
+
+You must return a raw JSON object matching this schema:
 {
-  "title": "A short descriptive name of the food plate",
-  "notes": "Short summary of what was detected and estimated sizes",
-  "confidence": 0.9,
+  "title": "A short descriptive name of the food plate (e.g. Chicken Avocado Salad)",
+  "notes": "A brief summary explaining what was detected in the image and how the sizes were estimated",
+  "confidence": 0.95,
   "calories": 420,
   "protein": 24.5,
   "carbs": 38.0,
   "fat": 15.0,
   "items": [
     {
-      "displayName": "Grilled salmon",
+      "displayName": "Grilled Chicken Breast",
       "servingG": 150,
-      "calories": 280,
-      "protein": 30.0,
+      "calories": 250,
+      "protein": 46.0,
       "carbs": 0.0,
-      "fat": 16.0
+      "fat": 5.0
     }
   ]
 }
