@@ -418,7 +418,6 @@ export default function ExploreScreen() {
     if (scanImageUri && scanResult && scaledScanValues) {
         return (
             <View style={[s.fullScreenContainer, { paddingTop: insets.top }]}>
-                {/* Header */}
                 <View style={s.scanResultHeader}>
                     <Pressable onPress={() => { setScanResult(null); setScanImageUri(null) }} style={s.backCircle}>
                         <Ionicons name="chevron-back" size={22} color="#000000" />
@@ -430,14 +429,11 @@ export default function ExploreScreen() {
                 </View>
 
                 <ScrollView contentContainerStyle={s.scanResultScroll} showsVerticalScrollIndicator={false}>
-                    {/* Centered Bowl/Image Display */}
                     <View style={s.bowlImageContainer}>
                         <Image source={{ uri: scanImageUri }} style={s.bowlImage as any} contentFit="cover" />
                     </View>
 
-                    {/* Sheet Detail Card */}
                     <View style={s.sheetCard}>
-                        {/* Title and Stepper Row */}
                         <View style={s.titleStepperRow}>
                             <Text style={s.sheetFoodName}>{scanResult.title}</Text>
                             <View style={s.stepperControl}>
@@ -457,13 +453,11 @@ export default function ExploreScreen() {
                             </View>
                         </View>
 
-                        {/* Large Calories Pill */}
                         <View style={s.wideCaloriePill}>
                             <Ionicons name="flame" size={20} color="#ff9500" />
                             <Text style={s.wideCalorieText}>Calories {scaledScanValues.calories}</Text>
                         </View>
 
-                        {/* Macros Horizontal Row */}
                         <View style={s.macrosGrid}>
                             <View style={s.macroGridCol}>
                                 <Text style={s.macroGridLabel}>Protein</Text>
@@ -479,7 +473,6 @@ export default function ExploreScreen() {
                             </View>
                         </View>
 
-                        {/* Ratio Split Segmented Bar */}
                         {macroRatios && (
                             <View style={s.ratioSection}>
                                 <View style={s.ratioLabelsRow}>
@@ -496,7 +489,6 @@ export default function ExploreScreen() {
                             </View>
                         )}
 
-                        {/* AI Health Insight Card */}
                         <Card style={s.insightCard}>
                             <View style={s.insightHeader}>
                                 <Ionicons name="sparkles" size={16} color="#5856d6" />
@@ -507,7 +499,6 @@ export default function ExploreScreen() {
                             </Text>
                         </Card>
 
-                        {/* Ingredients Breakdown */}
                         <View style={s.ingredientsSection}>
                             <View style={s.ingredientsHeader}>
                                 <Text style={s.ingredientsTitle}>Ingredients</Text>
@@ -528,7 +519,6 @@ export default function ExploreScreen() {
                             </View>
                         </View>
 
-                        {/* Double Buttons Actions Row */}
                         <View style={s.sheetActionButtonsRow}>
                             <Pressable 
                                 onPress={() => { setIsAiAssistVisible(true); setAiDescription(scanResult.title) }} 
@@ -561,7 +551,6 @@ export default function ExploreScreen() {
                 <Text style={s.subtitle}>Photo scan, barcode, or manual search.</Text>
             </View>
 
-            {/* Meal Type selection */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterRow}>
                 {MEAL_TYPES.map((filter) => {
                     const active = filter.key === mealType
@@ -613,7 +602,6 @@ export default function ExploreScreen() {
                 </Card>
             )}
 
-            {/* Manual Text Search Section */}
             <Text style={s.sectionTitle}>MANUAL SEARCH</Text>
             <TextInputField
                 value={query}
@@ -653,7 +641,6 @@ export default function ExploreScreen() {
                 </View>
             )}
 
-            {/* ── Modal 1: AI Analysis Assistant ── */}
             <Modal visible={isAiAssistVisible} animationType="slide" transparent>
                 <View style={s.modalOverlay}>
                     <View style={s.modalSheet}>
@@ -682,7 +669,6 @@ export default function ExploreScreen() {
                 </View>
             </Modal>
 
-            {/* ── Modal 2: Barcode Lookup ── */}
             <Modal visible={isBarcodeVisible} animationType="slide" transparent>
                 <View style={s.modalOverlay}>
                     <View style={s.modalSheet}>
@@ -723,7 +709,6 @@ export default function ExploreScreen() {
                 </View>
             </Modal>
 
-            {/* ── Modal 3: Serving Editor ── */}
             <Modal visible={isEditorVisible} animationType="slide" transparent>
                 <View style={s.modalOverlay}>
                     <View style={s.modalSheet}>
@@ -741,7 +726,6 @@ export default function ExploreScreen() {
                                     <Text style={s.editorFoodBrand}>{selectedFood.brand}</Text>
                                 </View>
 
-                                {/* Dynamic Nutrition Info */}
                                 {editorPreview && (
                                     <View style={s.editorSummaryRow}>
                                         <View style={s.editorCalCount}>
@@ -756,7 +740,6 @@ export default function ExploreScreen() {
                                     </View>
                                 )}
 
-                                {/* Numeric Weight Input */}
                                 <Text style={s.weightInputLabel}>SERVING SIZE (GRAMS):</Text>
                                 <View style={s.weightControlsRow}>
                                     <Pressable
@@ -779,7 +762,6 @@ export default function ExploreScreen() {
                                     </Pressable>
                                 </View>
 
-                                {/* Common Presets */}
                                 <View style={s.presetsRow}>
                                     {['50', '100', '150', '200', '300'].map((preset) => (
                                         <Pressable
@@ -799,7 +781,6 @@ export default function ExploreScreen() {
                 </View>
             </Modal>
 
-            {/* ── Modal 4: Web Camera Modal ── */}
             {Platform.OS === 'web' && (
                 <Modal visible={isWebCamVisible} animationType="fade" transparent>
                     <View style={s.webcamOverlay}>
@@ -842,7 +823,7 @@ export default function ExploreScreen() {
                                     <View style={s.shutterBtnInner} />
                                 </Pressable>
 
-                                <View style={{ width: 44 }} /> {/* Spacer to center the shutter button */}
+                                <View style={{ width: 44 }} />
                             </View>
                         </View>
                     </View>

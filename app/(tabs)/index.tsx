@@ -149,7 +149,6 @@ export default function HomeScreen() {
             ]}
             showsVerticalScrollIndicator={false}
         >
-            {/* ── Header ─────────────────────────────────────────────── */}
             <View style={s.headerRow}>
                 <View style={s.headerLeft}>
                     <View style={s.brandRow}>
@@ -163,12 +162,10 @@ export default function HomeScreen() {
                 <StreakBadge count={streak} />
             </View>
 
-            {/* ── Calendar Strip ────────────────────────────────────── */}
             <View style={s.calendarWrap}>
                 <CalendarStrip selectedDate={selectedDate} onDateSelect={setSelectedDate} />
             </View>
 
-            {/* ── Macro Rings Card ────────────────────────────────────── */}
             <MacroRings
                 calories={summary.caloriesConsumed}
                 caloriesGoal={summary.caloriesGoal}
@@ -180,13 +177,11 @@ export default function HomeScreen() {
                 fatGoal={summary.fatGoal}
             />
 
-            {/* ── Action Buttons ──────────────────────────────────────── */}
             <View style={s.actionRow}>
                 <Button label="Scan Meal" size="sm" onPress={() => router.push('/(tabs)/explore')} style={s.actionBtn} />
                 <Button label="History" size="sm" variant="outline" onPress={() => router.push('/(tabs)/activity')} style={s.actionBtn} />
             </View>
 
-            {/* ── Water Tracking ──────────────────────────────────────── */}
             <Card style={s.waterCard}>
                 <View style={s.waterHeader}>
                     <View style={s.waterLabelRow}>
@@ -208,13 +203,12 @@ export default function HomeScreen() {
                                     summary.waterGoalMl > 0
                                         ? (summary.waterMl / summary.waterGoalMl) * 100
                                         : 0
-                                )}%`,
+                                    )}%`,
                             },
                         ]}
                     />
                 </View>
 
-                {/* Quick Logging Buttons */}
                 <View style={s.waterButtonsRow}>
                     <Pressable
                         onPress={() => handleWaterChange(-250)}
@@ -233,13 +227,11 @@ export default function HomeScreen() {
                 </View>
             </Card>
 
-            {/* ── Weekly Chart ────────────────────────────────────────── */}
             <Text style={s.sectionTitle}>7-DAY OVERVIEW</Text>
             <Card style={s.chartCard}>
                 <WeeklyChart data={weeklyChartData} />
             </Card>
 
-            {/* ── Recent Meals ────────────────────────────────────────── */}
             <Text style={s.sectionTitle}>MEALS LOGGED FOR THIS DAY</Text>
             <Card style={s.activityCard}>
                 {topLogs.length === 0 && (
@@ -267,7 +259,6 @@ export default function HomeScreen() {
                 ))}
             </Card>
 
-            {/* ── Daily Insights & Verification Blog ── */}
             <Text style={s.sectionTitle}>VERIFIED DAILY INSIGHTS</Text>
             <View style={{ gap: 10 }}>
                 {DAILY_ARTICLES.map((article) => (
@@ -292,7 +283,6 @@ export default function HomeScreen() {
                 ))}
             </View>
 
-            {/* ── Modal: Article Reader ── */}
             {selectedArticle && (
                 <Modal visible={!!selectedArticle} animationType="slide" transparent>
                     <View style={s.articleOverlay}>
