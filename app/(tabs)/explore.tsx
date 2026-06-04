@@ -31,6 +31,7 @@ import { TAB_BAR_CLEARANCE } from '@/components/TabBar'
 import { useToast } from '@/contexts/ToastContext'
 import { MealType, useCreateMealLog, useFoodSearch, FoodSearchResult } from '@/hooks/useNutrition'
 import { scanFoodPhoto, type FoodScanResult } from '@/lib/foodScan'
+import { getCurrentLocale } from '@/lib/i18n'
 
 const MEAL_TYPES: Array<{ key: MealType; label: string }> = [
     { key: 'breakfast', label: 'Breakfast' },
@@ -129,7 +130,8 @@ export default function ExploreScreen() {
             const scan = await scanFoodPhoto({ 
                 imageUri, 
                 mealType, 
-                description: '' 
+                description: '',
+                locale: getCurrentLocale()
             })
             setScanResult(scan)
             setServingMultiplier(1)
@@ -219,7 +221,8 @@ export default function ExploreScreen() {
             const scan = await scanFoodPhoto({ 
                 imageUri: scanImageUri, 
                 mealType, 
-                description: aiDescription.trim() 
+                description: aiDescription.trim(),
+                locale: getCurrentLocale()
             })
             setScanResult(scan)
             setServingMultiplier(1)

@@ -176,6 +176,7 @@ export async function scanFoodPhoto(input: {
   imageUri: string
   mealType: MealType
   description?: string
+  locale?: string
 }) {
   // If Supabase is active, default to it
   if (isSupabaseEnabled) {
@@ -237,6 +238,15 @@ export async function scanFoodPhoto(input: {
     const base64Image = await uriToBase64(input.imageUri)
     const contextPrompt = input.description ? ` The user describes the food as: "${input.description}".` : ''
 
+    const localeNames: Record<string, string> = {
+      en: 'English',
+      es: 'Spanish',
+      fr: 'French',
+      de: 'German',
+      hi: 'Hindi',
+    }
+    const targetLanguage = localeNames[input.locale ?? 'en'] ?? 'English'
+
     const promptText = `Act as an expert clinical dietitian and computer vision nutritionist. Analyze the food item(s) present in the attached image with high precision.
 ${contextPrompt}
 
@@ -245,6 +255,7 @@ Perform a detailed visual analysis of the portion sizes, density, and ingredient
 2. Account for hidden fats, cooking oils, dressing, and sauces that are likely present but might not be explicitly mentioned.
 3. If the user provided a description context, use it to accurately determine ingredients, cooking methods, or specific food types.
 4. Calculate precise macronutrient estimates (protein, carbs, fat in grams) and total calories based on USDA nutrition databases.
+5. Translate the "title", the "notes", and the ingredient "displayName" fields into: ${targetLanguage}. Keep the nutrient values numerical, but localize all descriptive text fields into ${targetLanguage} precisely.
 
 You must return a raw JSON object matching this schema:
 {

@@ -7,13 +7,25 @@ export async function sendAssistantMessage(payload: {
   message: string
   summary?: DailySummary
   history?: Array<{ author: 'user' | 'assistant'; text: string }>
+  locale?: string
 }) {
   try {
+    const localeNames: Record<string, string> = {
+      en: 'English',
+      es: 'Spanish',
+      fr: 'French',
+      de: 'German',
+      hi: 'Hindi',
+    }
+    const targetLanguage = localeNames[payload.locale ?? 'en'] ?? 'English'
+
     const messages = [
       {
         role: 'system',
         content: `You are Cal AI Coach, a supportive, motivating, and professional personal nutritionist and fitness coach.
 You help users log food, analyze their macros, and offer fat loss, muscle building, and hydration advice.
+
+You must respond, explain, and translate all your advice precisely in the following language: ${targetLanguage}.
 
 Current user stats for today:
 - Calories Consumed: ${payload.summary?.caloriesConsumed ?? 0} kcal (Goal: ${payload.summary?.caloriesGoal ?? 2200} kcal)
@@ -22,7 +34,7 @@ Current user stats for today:
 - Fat Consumed: ${payload.summary?.fatConsumed ?? 0}g (Goal: ${payload.summary?.fatGoal ?? 70}g)
 - Water Logged: ${payload.summary?.waterMl ?? 0}ml (Goal: ${payload.summary?.waterGoalMl ?? 2500}ml)
 
-Respond in a conversational, supportive, and concise manner. Keep responses short (under 3 sentences) so they are easy to read and play aloud. Always refer to their actual calorie/macro balances today to give personalized advice.`,
+Respond in a conversational, supportive, and concise manner in ${targetLanguage}. Keep responses short (under 3 sentences) so they are easy to read and play aloud. Always refer to their actual calorie/macro balances today to give personalized advice.`,
       },
     ]
 

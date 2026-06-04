@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
-import { View, ScrollView, StyleSheet, Pressable, Modal } from 'react-native'
+import { View, ScrollView, StyleSheet, Pressable, Modal, ActivityIndicator } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { router } from 'expo-router'
+import { getCurrentLocale } from '@/lib/i18n'
+import { translateText } from '@/lib/translator'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { Text } from '@/components/ui/Text'
@@ -93,6 +95,37 @@ export default function HomeScreen() {
     const { t } = useTranslation()
     const [selectedDate, setSelectedDate] = useState(todayDate())
     const [selectedArticle, setSelectedArticle] = useState<any>(null)
+    const [isTranslatingArticle, setIsTranslatingArticle] = useState(false)
+
+    async function handleArticlePress(article: any) {
+        setSelectedArticle(article)
+        const locale = getCurrentLocale()
+        if (locale === 'en') {
+            setIsTranslatingArticle(false)
+            return
+        }
+        setIsTranslatingArticle(true)
+        try {
+            const [translatedTitle, translatedContent] = await Promise.all([
+                translateText(article.title, locale),
+                translateText(article.content, locale)
+            ])
+            setSelectedArticle({
+                ...article,
+                title: translatedTitle,
+                content: translatedContent
+            })
+        } catch (err) {
+            console.error('Failed to translate article:', err)
+        } finally {
+            setIsTranslatingArticle(false)
+        }
+    }
+
+    function handleCloseArticle() {
+        setSelectedArticle(null)
+        setIsTranslatingArticle(false)
+    }
     
     // Fetch queries filtered by the selected date
     const { data: summary } = useTodaySummary(selectedDate)
@@ -266,7 +299,7 @@ export default function HomeScreen() {
                 {DAILY_ARTICLES.map((article) => (
                     <Pressable
                         key={article.id}
-                        onPress={() => setSelectedArticle(article)}
+                        onPress={() => handleArticlePress(article)}
                         style={({ pressed }) => [s.blogCard, pressed && s.blogPressed]}
                     >
                         <View style={[s.blogBadge, { backgroundColor: article.color + '12', borderColor: article.color + '25' }]}>
@@ -294,25 +327,34 @@ export default function HomeScreen() {
                                     <Ionicons name={selectedArticle.icon as any} size={15} color={selectedArticle.color} />
                                     <Text style={[s.blogBadgeText, { color: selectedArticle.color }]}>{selectedArticle.category}</Text>
                                 </View>
-                                <Pressable onPress={() => setSelectedArticle(null)} style={s.articleCloseBtn}>
+                                <Pressable onPress={handleCloseArticle} style={s.articleCloseBtn}>
                                     <Ionicons name="close" size={22} color={TEXT_SECONDARY} />
                                 </Pressable>
                             </View>
 
                             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.articleScrollContent}>
-                                <Text style={s.articleTitleText}>{selectedArticle.title}</Text>
-                                <View style={s.articleMeta}>
-                                    <Text style={s.articleMetaText}>{selectedArticle.date}  •  {selectedArticle.readTime}</Text>
-                                    <View style={s.verifiedIndicator}>
-                                        <Ionicons name="checkmark-done-circle" size={15} color="#34c759" />
-                                        <Text style={[s.verifiedText, { fontSize: 12 }]}>Verified Information</Text>
+                                {isTranslatingArticle ? (
+                                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 250, gap: 12 }}>
+                                        <ActivityIndicator size="large" color={ACCENT} />
+                                        <Text style={{ color: TEXT_SECONDARY }}>Translating via Groq...</Text>
                                     </View>
-                                </View>
-                                <View style={s.divider} />
-                                <Text style={s.articleBody}>{selectedArticle.content}</Text>
+                                ) : (
+                                    <>
+                                        <Text style={s.articleTitleText}>{selectedArticle.title}</Text>
+                                        <View style={s.articleMeta}>
+                                            <Text style={s.articleMetaText}>{selectedArticle.date}  •  {selectedArticle.readTime}</Text>
+                                            <View style={s.verifiedIndicator}>
+                                                <Ionicons name="checkmark-done-circle" size={15} color="#34c759" />
+                                                <Text style={[s.verifiedText, { fontSize: 12 }]}>Verified Information</Text>
+                                            </View>
+                                        </View>
+                                        <View style={s.divider} />
+                                        <Text style={s.articleBody}>{selectedArticle.content}</Text>
+                                    </>
+                                )}
                             </ScrollView>
 
-                            <Button label="Got it" size="lg" onPress={() => setSelectedArticle(null)} fullWidth style={{ marginTop: 16 }} />
+                            <Button label="Got it" size="lg" onPress={handleCloseArticle} fullWidth style={{ marginTop: 16 }} />
                         </View>
                     </View>
                 </Modal>

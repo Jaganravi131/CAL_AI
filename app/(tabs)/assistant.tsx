@@ -9,6 +9,7 @@ import { sendAssistantMessage } from '@/lib/aiAssistant'
 import { useTodaySummary } from '@/hooks/useNutrition'
 import { useProfile } from '@/hooks/useProfile'
 import { TAB_BAR_HEIGHT } from '@/components/TabBar'
+import { getCurrentLocale } from '@/lib/i18n'
 
 type Message = { id: string; text: string; author: 'user' | 'assistant'; isSpeaking?: boolean }
 
@@ -161,6 +162,7 @@ export default function AssistantScreen() {
         message: textToSend,
         summary: summary || undefined,
         history,
+        locale: getCurrentLocale(),
       })
 
       const assistantMsgId = `a-${Date.now()}`
