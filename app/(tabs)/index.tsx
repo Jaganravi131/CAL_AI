@@ -659,6 +659,5 @@ const s = StyleSheet.create({
         lineHeight: 22,
         color: TEXT_SECONDARY,
         fontWeight: '500',
-        whiteSpace: 'pre-wrap',
-    } as any,
+    },
 })

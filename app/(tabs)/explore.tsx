@@ -401,7 +401,7 @@ export default function ExploreScreen() {
         const fCal = fG * 9
         const totalCal = pCal + cCal + fCal
         
-        if (totalCal <= 0) return { protein: 33, carbs: 33, fat: 34 }
+        if (totalCal <= 0 || isNaN(totalCal)) return { protein: 33, carbs: 33, fat: 34 }
         
         const pPct = Math.round((pCal / totalCal) * 100)
         const cPct = Math.round((cCal / totalCal) * 100)
