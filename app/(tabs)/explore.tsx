@@ -869,7 +869,7 @@ const s = StyleSheet.create({
         borderTopRightRadius: 28,
         padding: 22,
         gap: 16,
-        paddingBottom: 40,
+        paddingBottom: 40 + TAB_BAR_CLEARANCE,
     },
     titleStepperRow: {
         flexDirection: 'row',

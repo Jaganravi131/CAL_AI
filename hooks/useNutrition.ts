@@ -311,49 +311,54 @@ export function useCreateMealLog() {
         return createLocalMealLog({ scan, mealType, source, eatenAt, notes })
       }
       
-      const { data: userRes } = await supabase.auth.getUser()
-      const user = userRes.user
-      if (!user) {
+      try {
+        const { data: userRes } = await supabase.auth.getUser()
+        const user = userRes?.user
+        if (!user) {
+          return createLocalMealLog({ scan, mealType, source, eatenAt, notes })
+        }
+
+        const { data: mealLog, error: mealError } = await supabase
+          .from('meal_logs')
+          .insert({
+            user_id: user.id,
+            meal_type: mealType,
+            eaten_at: eatenAt ?? new Date().toISOString(),
+            scan_source: source,
+            total_calories: scan.calories,
+            total_protein_g: scan.protein,
+            total_carbs_g: scan.carbs,
+            total_fat_g: scan.fat,
+            ai_confidence: Math.round(scan.confidence * 100),
+            notes: notes ?? scan.notes ?? scan.title,
+          })
+          .select('id')
+          .single()
+
+        if (mealError) throw mealError
+
+        if (scan.items.length > 0) {
+          const { error: itemError } = await supabase.from('meal_log_items').insert(
+            scan.items.map((item) => ({
+              meal_log_id: mealLog.id,
+              user_id: user.id,
+              display_name: item.displayName,
+              serving_g: item.servingG,
+              calories: item.calories,
+              protein_g: item.protein,
+              carbs_g: item.carbs,
+              fat_g: item.fat,
+            }))
+          )
+
+          if (itemError) throw itemError
+        }
+
+        return mealLog
+      } catch (err) {
+        console.warn('Supabase createMealLog failed, falling back to local database:', err)
         return createLocalMealLog({ scan, mealType, source, eatenAt, notes })
       }
-
-      const { data: mealLog, error: mealError } = await supabase
-        .from('meal_logs')
-        .insert({
-          user_id: user.id,
-          meal_type: mealType,
-          eaten_at: eatenAt ?? new Date().toISOString(),
-          scan_source: source,
-          total_calories: scan.calories,
-          total_protein_g: scan.protein,
-          total_carbs_g: scan.carbs,
-          total_fat_g: scan.fat,
-          ai_confidence: Math.round(scan.confidence * 100),
-          notes: notes ?? scan.notes ?? scan.title,
-        })
-        .select('id')
-        .single()
-
-      if (mealError) throw mealError
-
-      if (scan.items.length > 0) {
-        const { error: itemError } = await supabase.from('meal_log_items').insert(
-          scan.items.map((item) => ({
-            meal_log_id: mealLog.id,
-            user_id: user.id,
-            display_name: item.displayName,
-            serving_g: item.servingG,
-            calories: item.calories,
-            protein_g: item.protein,
-            carbs_g: item.carbs,
-            fat_g: item.fat,
-          }))
-        )
-
-        if (itemError) throw itemError
-      }
-
-      return mealLog
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['nutrition'] })
@@ -472,8 +477,13 @@ export function useDeleteMealLog() {
       if (!isSupabaseEnabled) {
         return deleteLocalMealLog(id)
       }
-      const { error } = await supabase.from('meal_logs').delete().eq('id', id)
-      if (error) throw error
+      try {
+        const { error } = await supabase.from('meal_logs').delete().eq('id', id)
+        if (error) throw error
+      } catch (err) {
+        console.warn('Supabase deleteMealLog failed, falling back to local database:', err)
+        return deleteLocalMealLog(id)
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['nutrition'] })
@@ -530,25 +540,30 @@ export function useUpdateGoals() {
       if (!isSupabaseEnabled) {
         return saveLocalGoals(goals)
       }
-      const { data: userRes } = await supabase.auth.getUser()
-      const user = userRes.user
-      if (!user) {
+      try {
+        const { data: userRes } = await supabase.auth.getUser()
+        const user = userRes.user
+        if (!user) {
+          return saveLocalGoals(goals)
+        }
+
+        const { error } = await supabase
+          .from('daily_goals')
+          .upsert({
+            user_id: user.id,
+            calories_target: goals.caloriesTarget,
+            protein_target_g: goals.proteinTargetG,
+            carbs_target_g: goals.carbsTargetG,
+            fat_target_g: goals.fatTargetG,
+            water_target_ml: goals.waterTargetMl,
+            steps_target: goals.stepsTarget,
+          }, { onConflict: 'user_id' })
+
+        if (error) throw error
+      } catch (err) {
+        console.warn('Supabase updateGoals failed, falling back to local database:', err)
         return saveLocalGoals(goals)
       }
-
-      const { error } = await supabase
-        .from('daily_goals')
-        .upsert({
-          user_id: user.id,
-          calories_target: goals.caloriesTarget,
-          protein_target_g: goals.proteinTargetG,
-          carbs_target_g: goals.carbsTargetG,
-          fat_target_g: goals.fatTargetG,
-          water_target_ml: goals.waterTargetMl,
-          steps_target: goals.stepsTarget,
-        }, { onConflict: 'user_id' })
-
-      if (error) throw error
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['nutrition'] })
