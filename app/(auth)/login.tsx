@@ -20,13 +20,14 @@ import {
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { router } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
+import * as AuthSession from 'expo-auth-session'
 import { Text } from '@/components/ui/Text'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
-import { supabase } from '@/lib/supabase'
+import { supabase, isSupabaseEnabled } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
-import { ACCENT, ACCENT_DIM, ACCENT_BORDER, BG, SURFACE, BORDER, ERROR, ERROR_DIM, TEXT_SECONDARY } from '@/lib/theme'
+import { ACCENT, ACCENT_DIM, ACCENT_BORDER, BG, SURFACE, BORDER, ERROR, ERROR_DIM, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_TERTIARY } from '@/lib/theme'
 import { APP_NAME, APP_SCHEME } from '@/lib/constants'
 import { adjustBrightness } from '@/lib/utils'
 import { Fonts } from '@/lib/typography'
@@ -98,6 +99,10 @@ export default function LoginScreen() {
   }, [lockoutEnd])
 
   const handleSendOtp = async () => {
+    if (!isSupabaseEnabled) {
+      setError('Supabase is not configured. Set EXPO_PUBLIC_SUPABASE_URL and key in .env.local to enable email logins.')
+      return
+    }
     const normalized = normalizeEmail(email)
     if (!normalized || !normalized.includes('@') || !normalized.includes('.')) {
       setError('Enter a valid email address')
@@ -195,20 +200,32 @@ export default function LoginScreen() {
   // Requires: app.json scheme = 'myapp' (already set) so deep link works
 
   async function handleOAuthLogin(provider: 'google' | 'apple') {
+    if (!isSupabaseEnabled) {
+      setError('Supabase is not configured. Set EXPO_PUBLIC_SUPABASE_URL and key in .env.local to enable social logins.')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
-      const redirectTo = `${APP_SCHEME}://auth/callback`
+      // Build a platform-aware redirect URI using expo-auth-session which
+      // handles web vs native return URLs reliably.
+      const redirectTo = AuthSession.makeRedirectUri({ scheme: APP_SCHEME, path: '' })
       const { data, error: err } = await supabase.auth.signInWithOAuth({
         provider,
         options: { redirectTo, skipBrowserRedirect: true },
       })
       if (err) throw err
       if (!data.url) throw new Error('No OAuth URL returned.')
-
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo)
-      if (result.type === 'success') {
-        const { error: sessionErr } = await supabase.auth.exchangeCodeForSession(result.url)
+      // Use AuthSession.startAsync for better handling across platforms.
+      const result = await AuthSession.startAsync({ authUrl: data.url, returnUrl: redirectTo })
+      if (result.type === 'success' && (result as any).url) {
+        const urlStr = (result as any).url
+        const codeMatch = urlStr.match(/[?&#]code=([^&#]+)/)
+        const code = codeMatch ? codeMatch[1] : null
+        if (!code) {
+          throw new Error('No authorization code returned from provider.')
+        }
+        const { error: sessionErr } = await supabase.auth.exchangeCodeForSession(code)
         if (sessionErr) throw sessionErr
         // _layout.tsx auth guard handles navigation automatically
       }
@@ -226,7 +243,7 @@ export default function LoginScreen() {
     <View style={s.root}>
       {/* Back button */}
       <Pressable onPress={() => router.back()} style={[s.backBtn, { top: insets.top + 14 }]} hitSlop={14}>
-        <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.6)" />
+        <Ionicons name="chevron-back" size={24} color={TEXT_PRIMARY} />
       </Pressable>
 
       <KeyboardAvoidingView
@@ -456,7 +473,7 @@ const s = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: BORDER,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(0,0,0,0.03)',
     paddingHorizontal: 11,
     paddingVertical: 5,
     marginBottom: 28,
@@ -465,13 +482,13 @@ const s = StyleSheet.create({
     width: 6, height: 6, borderRadius: 999, backgroundColor: ACCENT,
   },
   appBadgeText: {
-    fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.5)', letterSpacing: 0.2,
+    fontSize: 11, fontWeight: '600', color: TEXT_SECONDARY, letterSpacing: 0.2,
   },
 
   // Title
   titleBlock: { gap: 10, marginBottom: 28 },
-  titleBold: { fontSize: 30, fontWeight: '800', color: '#fff', letterSpacing: -0.8, lineHeight: 36 },
-  sub: { fontSize: 14, color: 'rgba(255,255,255,0.40)', lineHeight: 20 },
+  titleBold: { fontSize: 30, fontWeight: '800', color: TEXT_PRIMARY, letterSpacing: -0.8, lineHeight: 36 },
+  sub: { fontSize: 14, color: TEXT_SECONDARY, lineHeight: 20 },
 
   emailPill: {
     alignSelf: 'flex-start', borderWidth: 1, borderRadius: 8,
@@ -485,11 +502,11 @@ const s = StyleSheet.create({
 
   // Fields
   fieldGroup: { gap: 8 },
-  label: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: 'rgba(255,255,255,0.30)' },
+  label: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: TEXT_TERTIARY },
   input: {
-    height: 52, backgroundColor: 'rgba(255,255,255,0.06)',
+    height: 52, backgroundColor: SURFACE,
     borderWidth: 1, borderColor: BORDER, borderRadius: 14,
-    paddingHorizontal: 16, color: '#fff', fontSize: 16,
+    paddingHorizontal: 16, color: TEXT_PRIMARY, fontSize: 16,
     fontFamily: Fonts.regular,
   },
   inputErr: { borderColor: `${ERROR}66` },
@@ -501,7 +518,7 @@ const s = StyleSheet.create({
   // Social buttons
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: BORDER },
-  dividerText: { color: 'rgba(255,255,255,0.25)', fontSize: 12 },
+  dividerText: { color: TEXT_TERTIARY, fontSize: 12 },
   socialRow: { flexDirection: 'row', gap: 12 },
   socialBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -512,7 +529,7 @@ const s = StyleSheet.create({
     width: 22, height: 22, borderRadius: 5, backgroundColor: '#fff',
     alignItems: 'center', justifyContent: 'center',
   },
-  socialBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  socialBtnText: { color: TEXT_PRIMARY, fontSize: 14, fontWeight: '600' },
 
   // Error
   errorBox: { borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10 },
@@ -529,9 +546,9 @@ const s = StyleSheet.create({
   otpRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   otpBox: {
     flex: 1,
-    height: 56, backgroundColor: 'rgba(255,255,255,0.06)',
+    height: 56, backgroundColor: SURFACE,
     borderWidth: 1, borderColor: BORDER, borderRadius: 12,
-    color: '#fff', fontSize: 22, textAlign: 'center',
+    color: TEXT_PRIMARY, fontSize: 22, textAlign: 'center',
     textAlignVertical: 'center', paddingVertical: 0, paddingHorizontal: 0,
     includeFontPadding: false,
     fontFamily: Fonts.regular,
@@ -545,13 +562,13 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     alignSelf: 'center',
     marginTop: 20,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderStyle: 'dashed',
+    borderWidth: 1, borderColor: BORDER, borderStyle: 'dashed',
     borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: 'rgba(0,0,0,0.02)',
   },
   devSkipText: { fontSize: 12, color: TEXT_SECONDARY, fontWeight: '500' },
 
   // Legal
   legalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 'auto', paddingTop: 24 },
-  legalLink: { fontSize: 11, color: 'rgba(255,255,255,0.3)', textDecorationLine: 'underline' },
+  legalLink: { fontSize: 11, color: TEXT_SECONDARY, textDecorationLine: 'underline' },
 })

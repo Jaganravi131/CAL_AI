@@ -17,6 +17,7 @@
     "@gorhom/bottom-sheet": "^5.2.8",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/netinfo": "11.5.2",
+    "@react-navigation/bottom-tabs": "^7.15.9",
     "@sentry/react-native": "~7.11.0",
     "@supabase/supabase-js": "^2.100.0",
     "@tanstack/react-query": "^5.99.0",
@@ -34,6 +35,7 @@
     "expo-splash-screen": "~55.0.17",
     "expo-status-bar": "~55.0.5",
     "expo-web-browser": "~55.0.2",
+    "expo-auth-session": "^4.0.3",
     "i18next": "^26.0.4",
     "lucide-react-native": "^1.7.0",
     "nativewind": "^4.2.3",
@@ -62,7 +64,7 @@
     "typescript": "~5.9.2"
   },
   "engines": {
-    "node": ">=20",
+    "node": ">=20.19.4",
     "npm": ">=10"
   },
   "packageManager": "npm@11.7.0",

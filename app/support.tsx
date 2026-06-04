@@ -24,7 +24,7 @@ export default function SupportScreen() {
         <View style={{ flex: 1, backgroundColor: BG }}>
             <View style={[s.header, { paddingTop: insets.top + 8 }]}>
                 <Pressable onPress={() => router.back()} hitSlop={12}>
-                    <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.6)" />
+                    <Ionicons name="chevron-back" size={24} color={TEXT_PRIMARY} />
                 </Pressable>
                 <Text style={s.headerTitle}>Support</Text>
                 <View style={{ width: 24 }} />
@@ -88,7 +88,7 @@ const s = StyleSheet.create({
         paddingHorizontal: 16,
         paddingBottom: 12,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: 'rgba(255,255,255,0.08)',
+        borderBottomColor: BORDER,
     },
     headerTitle: { color: TEXT_PRIMARY, fontSize: 17, fontWeight: '700' },
     body: { padding: 20, gap: 12 },

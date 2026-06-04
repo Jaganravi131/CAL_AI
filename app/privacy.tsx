@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Text } from '@/components/ui/Text'
-import { BG, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_TERTIARY } from '@/lib/theme'
+import { BG, BORDER, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_TERTIARY } from '@/lib/theme'
 
 export default function PrivacyScreen() {
     const insets = useSafeAreaInsets()
@@ -12,7 +12,7 @@ export default function PrivacyScreen() {
         <View style={{ flex: 1, backgroundColor: BG }}>
             <View style={[s.header, { paddingTop: insets.top + 8 }]}>
                 <Pressable onPress={() => router.back()} hitSlop={12}>
-                    <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.6)" />
+                    <Ionicons name="chevron-back" size={24} color={TEXT_PRIMARY} />
                 </Pressable>
                 <Text style={s.title}>Privacy Policy</Text>
                 <View style={{ width: 24 }} />
@@ -66,7 +66,7 @@ const s = StyleSheet.create({
         paddingHorizontal: 16,
         paddingBottom: 12,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: 'rgba(255,255,255,0.08)',
+        borderBottomColor: BORDER,
     },
     title: { color: TEXT_PRIMARY, fontSize: 17, fontWeight: '700' },
     body: { padding: 24, gap: 10 },

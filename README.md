@@ -229,12 +229,61 @@ Fill in the values:
 EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxx
 
+# Photo AI scan
+OPENAI_API_KEY=sk-your-openai-key
+OPENAI_MODEL=gpt-4o-mini
+
 # Leave empty — these degrade gracefully when unconfigured:
 EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=
 EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=
 EXPO_PUBLIC_SENTRY_DSN=
 EXPO_PUBLIC_POSTHOG_KEY=
 EXPO_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+## Deploying Supabase functions and DB migrations
+
+To enable real AI scans and the assistant you must deploy the Supabase Edge Functions and apply the DB migrations included in `supabase/migrations/`.
+
+1. Install and log in to the Supabase CLI:
+
+```bash
+npm install -g supabase
+supabase login
+```
+
+2. Copy the example environment into `.env.local` and fill in your values (do NOT check this file into source control):
+
+```bash
+cp .env.local.example .env.local
+# Edit .env.local and set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+# Important: the client must use the public/publishable key, not a secret/service-role key.
+```
+
+3. Deploy migrations and functions (from the repo root). The repo contains two functions: `food-scan` and `ai-assistant`.
+
+WARNING: `supabase db reset` will drop and recreate the local DB. Do not run against production unless you understand the consequences.
+
+```bash
+# Optional: run interactively
+./scripts/deploy-supabase.sh
+
+# Or on Windows PowerShell
+.
+\scripts\deploy-supabase.ps1
+```
+
+4. After deploy, open the Supabase dashboard to add the `OPENAI_API_KEY` secret (Functions → Settings → Environment variables / Secrets) and verify function logs.
+
+5. Test the app locally: start Expo and exercise the Assistant and Log Food flows. Photos uploaded via the app are routed to the `food-scan` function which will call OpenAI to compute nutrition (if configured).
+```
+
+If you already created your Supabase project, use the project URL and publishable key from the Supabase dashboard instead of the local `supabase start` values.
+
+For the photo AI flow, the app calls the `food-scan` Edge Function. It falls back to demo results until `OPENAI_API_KEY` is set.
+
+Deploy the function when you are ready:
+
+```bash
+supabase functions deploy food-scan
 ```
 
 ### Step 8 — Run the app

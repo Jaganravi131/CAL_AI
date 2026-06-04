@@ -208,7 +208,7 @@ export default function UpgradeScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={12}>
-        <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.6)" />
+        <Ionicons name="chevron-back" size={24} color={TEXT_PRIMARY} />
       </Pressable>
 
       <ScrollView
@@ -380,16 +380,16 @@ const s = StyleSheet.create({
   header:     { paddingTop: 4, paddingBottom: 20, gap: 8, alignItems: 'center' },
   sparkleWrap:{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   eyebrow:    { fontSize: 11, fontWeight: '700', letterSpacing: 2.5 },
-  title:      { color: '#fff', fontSize: 30, fontWeight: '800', letterSpacing: -0.5, textAlign: 'center' },
+  title:      { color: TEXT_PRIMARY, fontSize: 30, fontWeight: '800', letterSpacing: -0.5, textAlign: 'center' },
   subtitle:   { color: TEXT_SECONDARY, fontSize: 14, textAlign: 'center', lineHeight: 21 },
 
   proActiveCard: {
     borderRadius: RADIUS, borderWidth: 1,
-    backgroundColor: ACCENT_DIM, padding: 20, gap: 16,
+    backgroundColor: SURFACE, padding: 20, gap: 16,
   },
   proActiveTop:  { flexDirection: 'row', alignItems: 'center', gap: 12 },
   proBadge:      { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  proActiveTitle:{ color: '#fff', fontSize: 16, fontWeight: '700' },
+  proActiveTitle:{ color: TEXT_PRIMARY, fontSize: 16, fontWeight: '700' },
   proActiveSub:  { color: TEXT_SECONDARY, fontSize: 12, marginTop: 2 },
   manageBtn:     { alignItems: 'center', paddingTop: 4 },
   manageBtnText: { color: TEXT_TERTIARY, fontSize: 12, textDecorationLine: 'underline' },
@@ -402,19 +402,19 @@ const s = StyleSheet.create({
   featureGrid:  { gap: 12 },
   featureItem:  { flexDirection: 'row', alignItems: 'center', gap: 10 },
   featureIcon:  { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  featureText:  { color: 'rgba(255,255,255,0.78)', fontSize: 14, flex: 1, lineHeight: 20 },
+  featureText:  { color: TEXT_SECONDARY, fontSize: 14, flex: 1, lineHeight: 20 },
 
   packages:     { gap: 10, marginBottom: 16 },
-  packageCard:  { borderRadius: 16, borderWidth: 1, borderColor: BORDER, backgroundColor: 'rgba(255,255,255,0.03)', padding: 16, overflow: 'hidden' },
-  packageCardSelected: { backgroundColor: ACCENT_DIM },
+  packageCard:  { borderRadius: 16, borderWidth: 1, borderColor: BORDER, backgroundColor: SURFACE, padding: 16, overflow: 'hidden' },
+  packageCardSelected: { backgroundColor: SURFACE, borderColor: ACCENT, borderWidth: 2 },
   bestValueBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start', marginBottom: 10 },
   bestValueText:  { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
   packageRow:   { flexDirection: 'row', alignItems: 'center', gap: 12 },
   radio:        { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: BORDER, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   radioInner:   { width: 10, height: 10, borderRadius: 5 },
-  packageLabel: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  packageLabel: { color: TEXT_PRIMARY, fontSize: 15, fontWeight: '700' },
   packageNote:  { color: TEXT_SECONDARY, fontSize: 11, marginTop: 2 },
-  packagePrice: { color: '#fff', fontSize: 17, fontWeight: '800' },
+  packagePrice: { color: TEXT_PRIMARY, fontSize: 17, fontWeight: '800' },
   packagePer:   { color: TEXT_TERTIARY, fontSize: 11, textAlign: 'right' },
 
   unavailable: { borderRadius: 14, borderWidth: 1, borderColor: BORDER, padding: 20, alignItems: 'center', marginBottom: 16 },
@@ -424,15 +424,15 @@ const s = StyleSheet.create({
   cta:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 56, gap: 8 },
   ctaText:  { color: '#fff', fontSize: 16, fontWeight: '800' },
 
-  freeRow:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 14, borderWidth: 1, borderColor: BORDER, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 20 },
-  freeTierText: { color: TEXT_SECONDARY, fontSize: 14, fontWeight: '600' },
-  freeDescText: { color: TEXT_TERTIARY,  fontSize: 12, marginTop: 2 },
-  freeBadge:    { backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  freeBadgeText:{ color: TEXT_TERTIARY, fontSize: 11, fontWeight: '600' },
+  freeRow:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: SURFACE, borderRadius: 14, borderWidth: 1, borderColor: BORDER, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 20 },
+  freeTierText: { color: TEXT_PRIMARY, fontSize: 14, fontWeight: '600' },
+  freeDescText: { color: TEXT_SECONDARY,  fontSize: 12, marginTop: 2 },
+  freeBadge:    { backgroundColor: SURFACE, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  freeBadgeText:{ color: TEXT_SECONDARY, fontSize: 11, fontWeight: '600' },
 
   footerLinks:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 14 },
-  footerLink:   { color: TEXT_TERTIARY, fontSize: 13, textDecorationLine: 'underline' },
-  footerDot:    { color: 'rgba(255,255,255,0.2)', fontSize: 13 },
+  footerLink:   { color: TEXT_SECONDARY, fontSize: 13, textDecorationLine: 'underline' },
+  footerDot:    { color: TEXT_TERTIARY, fontSize: 13 },
 
-  legal: { color: 'rgba(255,255,255,0.18)', fontSize: 11, textAlign: 'center', lineHeight: 18 },
+  legal: { color: TEXT_TERTIARY, fontSize: 11, textAlign: 'center', lineHeight: 18 },
 })

@@ -8,6 +8,10 @@ const SUPABASE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
   ''
 
+export const supabaseUrl = SUPABASE_URL
+export const supabaseFunctionUrl = (name: string) =>
+  `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/${name}`
+
 /** True when Supabase credentials are present. Auth/DB calls are no-ops when false. */
 export const isSupabaseEnabled = !!SUPABASE_URL && !!SUPABASE_KEY
 

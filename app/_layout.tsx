@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { View, StyleSheet, Platform, DeviceEventEmitter } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Stack, useNavigationContainerRef, usePathname } from 'expo-router'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@/lib/queryClient'
@@ -146,8 +147,22 @@ function RootLayout() {
     configureRevenueCat()
 
     if (!isSupabaseEnabled) {
-      // No credentials — stay on landing page, no errors thrown
-      setIsAuthed(false)
+      AsyncStorage.getItem('sandbox_logged_in').then((val) => {
+        if (val === null) {
+          AsyncStorage.setItem('sandbox_logged_in', 'true')
+          setIsAuthed(true)
+          setOnboardingCompleted(true)
+        } else if (val === 'true') {
+          setIsAuthed(true)
+          setOnboardingCompleted(true)
+        } else {
+          setIsAuthed(false)
+          setOnboardingCompleted(null)
+        }
+      }).catch(() => {
+        setIsAuthed(false)
+        setOnboardingCompleted(null)
+      })
       return
     }
 
@@ -196,12 +211,24 @@ function RootLayout() {
   }, [])
 
   useEffect(() => {
-    if (!__DEV__) return
-    const sub = DeviceEventEmitter.addListener('__dev_skip_auth__', () => {
+    const sub1 = DeviceEventEmitter.addListener('__dev_skip_auth__', async () => {
+      try {
+        await AsyncStorage.setItem('sandbox_logged_in', 'true')
+      } catch {}
       setIsAuthed(true)
       setOnboardingCompleted(true)
     })
-    return () => sub.remove()
+    const sub2 = DeviceEventEmitter.addListener('__dev_logout__', async () => {
+      try {
+        await AsyncStorage.setItem('sandbox_logged_in', 'false')
+      } catch {}
+      setIsAuthed(false)
+      setOnboardingCompleted(null)
+    })
+    return () => {
+      sub1.remove()
+      sub2.remove()
+    }
   }, [])
 
   // Show blank dark screen while session + i18n checks complete.
@@ -249,6 +276,7 @@ function RootLayout() {
                         <Stack.Protected guard={!!isAuthed && onboardingCompleted === true}>
                           <Stack.Screen name="(tabs)" />
                           <Stack.Screen name="detail/[id]" />
+                          <Stack.Screen name="goals" />
                           <Stack.Screen name="settings" />
                           <Stack.Screen name="support" />
                         </Stack.Protected>

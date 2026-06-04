@@ -1,34 +1,86 @@
 import { useMemo, useState } from 'react'
-import { View, ScrollView, StyleSheet, RefreshControl, Pressable } from 'react-native'
+import { View, ScrollView, StyleSheet, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { Text } from '@/components/ui/Text'
 import { Card } from '@/components/ui/Card'
-import StatusBadge from '@/components/ui/StatusBadge'
+import { Button } from '@/components/ui/Button'
 import {
     ACCENT,
-    ACCENT_DIM,
     BG,
+    BORDER,
+    TEXT_PRIMARY,
     TEXT_SECONDARY,
     TEXT_TERTIARY,
+    ACCENT_DIM,
 } from '@/lib/theme'
 import { TAB_BAR_CLEARANCE } from '@/components/TabBar'
-import { insightCards, statusLabel } from '@/lib/mockData'
-import { useItems } from '@/hooks/useItems'
-import { useActivityFeed } from '@/hooks/useActivityFeed'
 import { useProfile } from '@/hooks/useProfile'
+import {
+    useMacroProgress,
+    useMealLogs,
+    useTodaySummary,
+    useWeeklySummaries,
+    useUpdateWater,
+    useStreak,
+} from '@/hooks/useNutrition'
+import type { DailySummary, MealType } from '@/hooks/useNutrition'
+import MacroRings from '@/components/MacroRings'
+import WeeklyChart from '@/components/WeeklyChart'
+import StreakBadge from '@/components/StreakBadge'
+import CalendarStrip from '@/components/CalendarStrip'
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function todayDate() {
+    return new Date().toISOString().slice(0, 10)
+}
+
+function mealIcon(kind: MealType): keyof typeof Ionicons.glyphMap {
+    switch (kind) {
+        case 'breakfast':
+            return 'sunny-outline'
+        case 'lunch':
+            return 'restaurant-outline'
+        case 'dinner':
+            return 'moon-outline'
+        case 'snack':
+            return 'nutrition-outline'
+        default:
+            return 'ellipse-outline'
+    }
+}
+
+// ── Home Screen ───────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
     const insets = useSafeAreaInsets()
-    const [refreshing, setRefreshing] = useState(false)
-    const queryClient = useQueryClient()
-
-    const { data: items = [] } = useItems()
-    const { data: activityItems = [] } = useActivityFeed()
+    const [selectedDate, setSelectedDate] = useState(todayDate())
+    
+    // Fetch queries filtered by the selected date
+    const { data: summary } = useTodaySummary(selectedDate)
+    const { data: logs = [] } = useMealLogs(selectedDate)
     const { data: profile } = useProfile()
+    const { data: weeklySummaries = [] } = useWeeklySummaries()
+    const { data: streak = 0 } = useStreak()
+    const updateWater = useUpdateWater()
 
+    const topLogs = useMemo(() => logs.slice(0, 4), [logs])
+
+    // Weekly chart data
+    const weeklyChartData = useMemo(() => {
+        const sorted = [...weeklySummaries].sort(
+            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        )
+        return sorted.map((day) => ({
+            date: day.date,
+            consumed: day.caloriesConsumed,
+            goal: day.caloriesGoal,
+        }))
+    }, [weeklySummaries])
+
+    // Greeting
     const greeting = (() => {
         const h = new Date().getHours()
         if (h < 12) return 'Good morning'
@@ -36,136 +88,370 @@ export default function HomeScreen() {
         return 'Good evening'
     })()
 
-    const topItems = useMemo(() => items.slice(0, 3), [items])
-    const latestActivity = useMemo(() => activityItems.slice(0, 3), [activityItems])
+    const firstName = (profile?.fullName ?? '').split(' ')[0]
 
-    const onRefresh = async () => {
-        setRefreshing(true)
-        await queryClient.invalidateQueries({ queryKey: ['items'] })
-        await queryClient.invalidateQueries({ queryKey: ['activity'] })
-        setRefreshing(false)
+    async function handleWaterChange(amount: number) {
+        try {
+            await updateWater.mutateAsync({ date: selectedDate, ml: amount })
+        } catch (err) {
+            console.error('Error changing water:', err)
+        }
+    }
+
+    if (!summary) {
+        return (
+            <View style={s.loadingWrap}>
+                <Text style={s.loadingText}>Loading dashboard...</Text>
+            </View>
+        )
     }
 
     return (
         <ScrollView
-            style={{ flex: 1, backgroundColor: BG }}
-            contentContainerStyle={[s.container, { paddingTop: insets.top + 16, paddingBottom: TAB_BAR_CLEARANCE + 16 }]}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={ACCENT} />}
+            style={s.scroll}
+            contentContainerStyle={[
+                s.container,
+                { paddingTop: insets.top + 16, paddingBottom: TAB_BAR_CLEARANCE + 16 },
+            ]}
             showsVerticalScrollIndicator={false}
         >
-            <View style={s.header}>
-                <Text style={s.greeting}>{greeting}, {(profile?.fullName ?? '').split(' ')[0]}</Text>
-                <Text style={s.subGreeting}>Here's your latest overview.</Text>
-            </View>
-
-            <Text style={s.sectionTitle}>Quick Stats</Text>
-            <View style={s.cardGrid}>
-                {insightCards.map((insight) => (
-                    <Card key={insight.id} style={s.metricCard}>
-                        <Text style={s.metricLabel}>{insight.label}</Text>
-                        <Text style={s.metricValue}>{insight.value}</Text>
-                        <Text style={s.metricDelta}>{insight.delta}</Text>
-                    </Card>
-                ))}
-            </View>
-
-            <Text style={s.sectionTitle}>Recent Items</Text>
-            {topItems.map((item) => (
-                <Pressable
-                    key={item.id}
-                    onPress={() => router.push(`/detail/${item.id}`)}
-                    style={({ pressed }) => [pressed && { opacity: 0.75 }]}
-                >
-                    <Card style={s.itemCard}>
-                        <View style={s.itemTop}>
-                            <View style={s.itemTitleWrap}>
-                                <Text style={s.cardTitle}>{item.name}</Text>
-                                <Text style={s.cardSub}>{item.owner} | Updated {item.updatedAt}</Text>
-                            </View>
-                            <StatusBadge status={item.status} label={statusLabel(item.status)} />
-                        </View>
-
-                        <Text style={[s.cardSub, { marginTop: 8 }]}>{item.summary}</Text>
-
-                        <View style={s.itemMeta}>
-                            <Text style={s.metaValue}>{item.completion}% complete</Text>
-                            <Text style={s.metaValue}>Health {item.health}</Text>
-                            <Text style={s.metaValue}>{item.activeUsers} active</Text>
-                        </View>
-                    </Card>
-                </Pressable>
-            ))}
-
-            <Text style={s.sectionTitle}>Recent Activity</Text>
-            <Card style={s.activityCard}>
-                {latestActivity.map((activity, index) => (
-                    <View key={activity.id} style={[s.activityRow, index < latestActivity.length - 1 && s.activityDivider]}>
-                        <View style={s.activityIconWrap}>
-                            <Ionicons name={activityIcon(activity.kind)} size={14} color={ACCENT} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={s.activityTitle}>{activity.title}</Text>
-                            <Text style={s.cardSub}>{activity.detail}</Text>
-                        </View>
-                        <Text style={s.activityTime}>{activity.timeAgo}</Text>
+            {/* ── Header ─────────────────────────────────────────────── */}
+            <View style={s.headerRow}>
+                <View style={s.headerLeft}>
+                    <View style={s.brandRow}>
+                        <Ionicons name="logo-apple" size={26} color="#000000" />
+                        <Text style={s.greeting}>Cal AI</Text>
                     </View>
+                    <Text style={s.subGreeting}>
+                        {greeting}, {firstName || 'there'}!
+                    </Text>
+                </View>
+                <StreakBadge count={streak} />
+            </View>
+
+            {/* ── Calendar Strip ────────────────────────────────────── */}
+            <View style={s.calendarWrap}>
+                <CalendarStrip selectedDate={selectedDate} onDateSelect={setSelectedDate} />
+            </View>
+
+            {/* ── Macro Rings Card ────────────────────────────────────── */}
+            <MacroRings
+                calories={summary.caloriesConsumed}
+                caloriesGoal={summary.caloriesGoal}
+                protein={summary.proteinConsumed}
+                proteinGoal={summary.proteinGoal}
+                carbs={summary.carbsConsumed}
+                carbsGoal={summary.carbsGoal}
+                fat={summary.fatConsumed}
+                fatGoal={summary.fatGoal}
+            />
+
+            {/* ── Action Buttons ──────────────────────────────────────── */}
+            <View style={s.actionRow}>
+                <Button label="Scan Meal" size="sm" onPress={() => router.push('/(tabs)/explore')} style={s.actionBtn} />
+                <Button label="History" size="sm" variant="outline" onPress={() => router.push('/(tabs)/activity')} style={s.actionBtn} />
+            </View>
+
+            {/* ── Water Tracking ──────────────────────────────────────── */}
+            <Card style={s.waterCard}>
+                <View style={s.waterHeader}>
+                    <View style={s.waterLabelRow}>
+                        <Ionicons name="water" size={18} color="#007aff" />
+                        <Text style={s.waterTitle}>Water Tracker</Text>
+                    </View>
+                    <Text style={s.waterValue}>
+                        {summary.waterMl} / {summary.waterGoalMl} ml
+                    </Text>
+                </View>
+                
+                <View style={s.waterTrack}>
+                    <View
+                        style={[
+                            s.waterFill,
+                            {
+                                width: `${Math.min(
+                                    100,
+                                    summary.waterGoalMl > 0
+                                        ? (summary.waterMl / summary.waterGoalMl) * 100
+                                        : 0
+                                )}%`,
+                            },
+                        ]}
+                    />
+                </View>
+
+                {/* Quick Logging Buttons */}
+                <View style={s.waterButtonsRow}>
+                    <Pressable
+                        onPress={() => handleWaterChange(-250)}
+                        style={({ pressed }) => [s.waterLogBtn, pressed && s.waterBtnPressed]}
+                    >
+                        <Ionicons name="remove-circle-outline" size={16} color="#6e6e73" />
+                        <Text style={s.waterLogBtnText}>-250 ml</Text>
+                    </Pressable>
+                    <Pressable
+                        onPress={() => handleWaterChange(250)}
+                        style={({ pressed }) => [s.waterLogBtn, s.waterLogBtnAdd, pressed && s.waterBtnPressed]}
+                    >
+                        <Ionicons name="add-circle-outline" size={16} color="#007aff" />
+                        <Text style={[s.waterLogBtnText, s.waterLogBtnTextAdd]}>+250 ml</Text>
+                    </Pressable>
+                </View>
+            </Card>
+
+            {/* ── Weekly Chart ────────────────────────────────────────── */}
+            <Text style={s.sectionTitle}>7-DAY OVERVIEW</Text>
+            <Card style={s.chartCard}>
+                <WeeklyChart data={weeklyChartData} />
+            </Card>
+
+            {/* ── Recent Meals ────────────────────────────────────────── */}
+            <Text style={s.sectionTitle}>MEALS LOGGED FOR THIS DAY</Text>
+            <Card style={s.activityCard}>
+                {topLogs.length === 0 && (
+                    <View style={s.emptyRow}>
+                        <Text style={s.emptyText}>No meals logged for this date</Text>
+                    </View>
+                )}
+                {topLogs.map((log, index) => (
+                    <Pressable
+                        key={log.id}
+                        onPress={() => router.push(`/detail/${log.id}`)}
+                        style={[s.activityRow, index < topLogs.length - 1 && s.activityDivider]}
+                    >
+                        <View style={s.activityIconWrap}>
+                            <Ionicons name={mealIcon(log.mealType)} size={14} color="#000000" />
+                        </View>
+                        <View style={s.activityContent}>
+                            <Text style={s.activityTitle}>{log.notes || 'Meal entry'}</Text>
+                            <Text style={s.activitySub}>
+                                {log.mealType.toUpperCase()} • {log.source.replace('_', ' ')}
+                            </Text>
+                        </View>
+                        <Text style={s.activityCal}>{log.calories.toFixed(0)} kcal</Text>
+                    </Pressable>
                 ))}
             </Card>
         </ScrollView>
     )
 }
 
-function activityIcon(kind: 'milestone' | 'comment' | 'alert' | 'review') {
-    switch (kind) {
-        case 'milestone':
-            return 'flag-outline'
-        case 'comment':
-            return 'chatbubble-ellipses-outline'
-        case 'alert':
-            return 'alert-circle-outline'
-        case 'review':
-            return 'checkmark-done-outline'
-        default:
-            return 'ellipse-outline'
-    }
-}
+// ── Styles ────────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-    container: { paddingHorizontal: 20, gap: 14 },
-    header: { gap: 4, marginBottom: 4 },
-    greeting: { fontSize: 26, fontWeight: '800', color: '#fff', letterSpacing: -0.6 },
-    subGreeting: { fontSize: 14, color: TEXT_SECONDARY },
-    sectionTitle: {
-        fontSize: 11,
+    scroll: {
+        flex: 1,
+        backgroundColor: BG,
+    },
+    container: {
+        paddingHorizontal: 20,
+        gap: 14,
+    },
+    loadingWrap: {
+        flex: 1,
+        backgroundColor: BG,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    loadingText: {
+        color: TEXT_SECONDARY,
+    },
+
+    // Header
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 2,
+    },
+    headerLeft: {
+        flex: 1,
+        gap: 2,
+    },
+    brandRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    greeting: {
+        fontSize: 24,
+        fontWeight: '900',
+        color: TEXT_PRIMARY,
+        letterSpacing: -0.6,
+    },
+    subGreeting: {
+        fontSize: 13,
+        color: TEXT_SECONDARY,
+        fontWeight: '500',
+    },
+    calendarWrap: {
+        marginVertical: 4,
+    },
+
+    // Rings card
+    ringsCard: {
+        gap: 12,
+        borderWidth: 1,
+        borderColor: BORDER,
+    },
+    sectionLabel: {
+        fontSize: 10,
         fontWeight: '700',
         color: TEXT_TERTIARY,
         letterSpacing: 0.8,
-        textTransform: 'uppercase',
+    },
+
+    // Action buttons
+    actionRow: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    actionBtn: {
+        flex: 1,
+    },
+
+    // Water card
+    waterCard: {
+        gap: 10,
+        borderWidth: 1,
+        borderColor: BORDER,
+    },
+    waterHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    waterLabelRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    waterTitle: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: TEXT_PRIMARY,
+    },
+    waterValue: {
+        fontSize: 12,
+        color: TEXT_SECONDARY,
+        fontWeight: '600',
+    },
+    waterTrack: {
+        height: 6,
+        borderRadius: 999,
+        backgroundColor: 'rgba(0,0,0,0.03)',
+        overflow: 'hidden',
+    },
+    waterFill: {
+        height: '100%',
+        borderRadius: 999,
+        backgroundColor: '#007aff', // iOS blue
+    },
+    waterButtonsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 10,
         marginTop: 4,
     },
-    cardGrid: { flexDirection: 'row', gap: 10 },
-    metricCard: { flex: 1, gap: 3, paddingVertical: 12, paddingHorizontal: 12 },
-    metricLabel: { fontSize: 11, color: TEXT_TERTIARY, fontWeight: '600' },
-    metricValue: { fontSize: 17, color: '#fff', fontWeight: '700', letterSpacing: -0.2 },
-    metricDelta: { fontSize: 11, color: ACCENT },
-    itemCard: { gap: 2, paddingVertical: 14 },
-    itemTop: { flexDirection: 'row', gap: 10 },
-    itemTitleWrap: { flex: 1, gap: 3 },
-    cardTitle: { fontSize: 15, fontWeight: '700', color: '#fff' },
-    cardSub: { fontSize: 12, color: TEXT_SECONDARY, lineHeight: 18 },
-    itemMeta: { flexDirection: 'row', gap: 12, marginTop: 10, flexWrap: 'wrap' },
-    metaValue: { fontSize: 11, color: TEXT_TERTIARY },
-    activityCard: { paddingVertical: 4, paddingHorizontal: 0 },
-    activityRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 10 },
-    activityDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(255,255,255,0.08)' },
+    waterLogBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 8,
+        borderRadius: 10,
+        backgroundColor: '#f5f5f7',
+        borderWidth: 1,
+        borderColor: BORDER,
+    },
+    waterLogBtnAdd: {
+        backgroundColor: 'rgba(0,122,255,0.04)',
+        borderColor: 'rgba(0,122,255,0.12)',
+    },
+    waterBtnPressed: {
+        opacity: 0.7,
+    },
+    waterLogBtnText: {
+        fontSize: 11.5,
+        fontWeight: '600',
+        color: TEXT_SECONDARY,
+    },
+    waterLogBtnTextAdd: {
+        color: '#007aff',
+    },
+
+    // Section titles
+    sectionTitle: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: TEXT_TERTIARY,
+        letterSpacing: 0.8,
+        marginTop: 4,
+    },
+
+    // Chart card
+    chartCard: {
+        paddingHorizontal: 8,
+        paddingVertical: 12,
+        borderWidth: 1,
+        borderColor: BORDER,
+    },
+
+    // Activity / Meals
+    activityCard: {
+        paddingVertical: 4,
+        paddingHorizontal: 0,
+        borderWidth: 1,
+        borderColor: BORDER,
+    },
+    activityRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+    },
+    activityDivider: {
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: BORDER,
+    },
     activityIconWrap: {
         width: 28,
         height: 28,
         borderRadius: 9,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: ACCENT_DIM,
+        backgroundColor: '#f5f5f7',
     },
-    activityTitle: { fontSize: 13.5, color: '#fff', fontWeight: '600', marginBottom: 1 },
-    activityTime: { fontSize: 11, color: TEXT_TERTIARY },
+    activityContent: {
+        flex: 1,
+    },
+    activityTitle: {
+        fontSize: 13.5,
+        color: TEXT_PRIMARY,
+        fontWeight: '600',
+        marginBottom: 1,
+    },
+    activitySub: {
+        fontSize: 12,
+        color: TEXT_SECONDARY,
+        lineHeight: 18,
+    },
+    activityCal: {
+        fontSize: 12,
+        color: TEXT_PRIMARY,
+        fontWeight: '600',
+    },
+
+    // Empty state
+    emptyRow: {
+        paddingHorizontal: 12,
+        paddingVertical: 16,
+        alignItems: 'center',
+    },
+    emptyText: {
+        fontSize: 13,
+        color: TEXT_TERTIARY,
+    },
 })

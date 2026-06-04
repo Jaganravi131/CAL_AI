@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, ScrollView, StyleSheet, Pressable } from 'react-native'
+import { View, ScrollView, StyleSheet, Pressable, DeviceEventEmitter } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -10,7 +10,7 @@ import { AlertModal } from '@/components/ui/AppModal'
 import SettingsRow from '@/components/ui/SettingsRow'
 import { useSubscription } from '@/contexts/SubscriptionContext'
 import { logoutRevenueCat } from '@/lib/purchases'
-import { supabase } from '@/lib/supabase'
+import { supabase, isSupabaseEnabled } from '@/lib/supabase'
 import { track } from '@/lib/analytics'
 import { adjustBrightness } from '@/lib/utils'
 import {
@@ -43,8 +43,12 @@ export default function ProfileScreen() {
         try {
             track('logout')
             await logoutRevenueCat()
-            const { error } = await supabase.auth.signOut()
-            if (error) throw error
+            if (!isSupabaseEnabled) {
+                DeviceEventEmitter.emit('__dev_logout__')
+            } else {
+                const { error } = await supabase.auth.signOut()
+                if (error) throw error
+            }
         } catch (e: any) {
             setErrorModal(e?.message ?? 'Sign out failed. Please try again.')
         } finally {
@@ -125,7 +129,7 @@ export default function ProfileScreen() {
                 disabled={signingOut}
                 style={({ pressed }) => [s.signOutBtn, (pressed || signingOut) && { opacity: 0.72 }]}
             >
-                <Ionicons name="log-out-outline" size={17} color="rgba(255,255,255,0.45)" />
+                <Ionicons name="log-out-outline" size={17} color="#ff3b30" />
                 <Text style={s.signOutText}>{signingOut ? 'Signing out…' : 'Sign out'}</Text>
             </Pressable>
 
@@ -166,7 +170,7 @@ const s = StyleSheet.create({
         borderRadius: 36,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(255,255,255,0.18)',
+        backgroundColor: ACCENT,
         marginBottom: 4,
     },
     avatarText: { fontSize: 24, fontWeight: '800', color: '#fff' },
@@ -234,7 +238,12 @@ const s = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 7,
-        paddingVertical: 10,
+        paddingVertical: 12,
+        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.06)',
+        borderRadius: 14,
+        marginTop: 12,
     },
-    signOutText: { color: 'rgba(255,255,255,0.45)', fontSize: 14, fontWeight: '500' },
+    signOutText: { color: '#ff3b30', fontSize: 14, fontWeight: '600' },
 })
