@@ -389,6 +389,27 @@ export default function ExploreScreen() {
         }
     }, [scanResult, servingMultiplier])
 
+    // Macro ratios calculations
+    const macroRatios = useMemo(() => {
+        if (!scanResult) return null
+        const pG = scanResult.protein * servingMultiplier
+        const cG = scanResult.carbs * servingMultiplier
+        const fG = scanResult.fat * servingMultiplier
+        
+        const pCal = pG * 4
+        const cCal = cG * 4
+        const fCal = fG * 9
+        const totalCal = pCal + cCal + fCal
+        
+        if (totalCal <= 0) return { protein: 33, carbs: 33, fat: 34 }
+        
+        const pPct = Math.round((pCal / totalCal) * 100)
+        const cPct = Math.round((cCal / totalCal) * 100)
+        const fPct = 100 - pPct - cPct
+        
+        return { protein: pPct, carbs: cPct, fat: fPct }
+    }, [scanResult, servingMultiplier])
+
     // RENDER: DEDICATED SCAN RESULTS VIEW (Matches Cal AI see the calories screenshot)
     if (scanImageUri && scanResult && scaledScanValues) {
         return (
@@ -453,6 +474,34 @@ export default function ExploreScreen() {
                                 <Text style={[s.macroGridVal, { color: '#007aff' }]}>{scaledScanValues.fat}g</Text>
                             </View>
                         </View>
+
+                        {/* Ratio Split Segmented Bar */}
+                        {macroRatios && (
+                            <View style={s.ratioSection}>
+                                <View style={s.ratioLabelsRow}>
+                                    <Text style={s.ratioLabel}>Calorie Split</Text>
+                                    <Text style={s.ratioValueText}>
+                                        Protein {macroRatios.protein}%  •  Carbs {macroRatios.carbs}%  •  Fat {macroRatios.fat}%
+                                    </Text>
+                                </View>
+                                <View style={s.ratioBarContainer}>
+                                    <View style={[s.ratioBarSegment, { flex: Math.max(1, macroRatios.protein), backgroundColor: '#ff3b30' }]} />
+                                    <View style={[s.ratioBarSegment, { flex: Math.max(1, macroRatios.carbs), backgroundColor: '#ff9500' }]} />
+                                    <View style={[s.ratioBarSegment, { flex: Math.max(1, macroRatios.fat), backgroundColor: '#007aff' }]} />
+                                </View>
+                            </View>
+                        )}
+
+                        {/* AI Health Insight Card */}
+                        <Card style={s.insightCard}>
+                            <View style={s.insightHeader}>
+                                <Ionicons name="sparkles" size={16} color="#5856d6" />
+                                <Text style={s.insightHeaderTitle}>AI Nutrition Coach Insight</Text>
+                            </View>
+                            <Text style={s.insightText}>
+                                {scanResult.notes || "Balanced portion containing standard protein, carbohydrate, and fat elements."}
+                            </Text>
+                        </Card>
 
                         {/* Ingredients Breakdown */}
                         <View style={s.ingredientsSection}>
@@ -1398,5 +1447,59 @@ const s = StyleSheet.create({
         height: 54,
         borderRadius: 27,
         backgroundColor: '#ffffff',
+    },
+    ratioSection: {
+        gap: 6,
+        marginTop: 4,
+    },
+    ratioLabelsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    ratioLabel: {
+        fontSize: 12,
+        fontWeight: '800',
+        color: TEXT_PRIMARY,
+    },
+    ratioValueText: {
+        fontSize: 11,
+        color: TEXT_SECONDARY,
+        fontWeight: '600',
+    },
+    ratioBarContainer: {
+        height: 8,
+        borderRadius: 4,
+        overflow: 'hidden',
+        flexDirection: 'row',
+        backgroundColor: 'rgba(0,0,0,0.05)',
+    },
+    ratioBarSegment: {
+        height: '100%',
+    },
+    insightCard: {
+        backgroundColor: 'rgba(88,86,214,0.04)',
+        borderWidth: 1,
+        borderColor: 'rgba(88,86,214,0.12)',
+        borderRadius: 16,
+        padding: 14,
+        gap: 6,
+        marginTop: 4,
+    },
+    insightHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    insightHeaderTitle: {
+        fontSize: 12,
+        fontWeight: '800',
+        color: '#5856d6',
+    },
+    insightText: {
+        fontSize: 12.5,
+        lineHeight: 18,
+        color: TEXT_SECONDARY,
+        fontWeight: '500',
     },
 })

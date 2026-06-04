@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { View, ScrollView, StyleSheet, Pressable } from 'react-native'
+import { View, ScrollView, StyleSheet, Pressable, Modal } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -52,11 +52,45 @@ function mealIcon(kind: MealType): keyof typeof Ionicons.glyphMap {
     }
 }
 
+const DAILY_ARTICLES = [
+    {
+        id: 'a-1',
+        title: "How to Track Calories When Dining Out",
+        category: "DIET TIPS",
+        readTime: "3 min read",
+        date: "Today",
+        color: "#ff3b30",
+        icon: "restaurant-outline",
+        content: "Eating out doesn't have to ruin your tracking progress. Here are 3 expert tips to estimate calories with confidence:\n\n1. Deconstruct the Plate: Identify the main protein, carbohydrate, and fat source separately.\n2. Factor in Hidden Oils: Restaurants use generous amounts of butter and oil. Always add 10-15g of fat (approx. 100-130 kcal) to your meal estimate to cover cooking oils.\n3. Search for Similar Items: Look for standard recipes in your search logger (e.g. 'Grilled Salmon' or 'Beef Stir Fry') instead of restaurant-specific entries for a more accurate baseline."
+    },
+    {
+        id: 'a-2',
+        title: "Is High-Fructose Corn Syrup Actually Bad?",
+        category: "NUTRITION SCIENCE",
+        readTime: "5 min read",
+        date: "Yesterday",
+        color: "#ff9500",
+        icon: "nutrition-outline",
+        content: "While often labeled as a primary driver of metabolic issues, the body processes high-fructose corn syrup (HFCS) in a very similar manner to standard table sugar. Both consist of roughly a 50/50 split of glucose and fructose. The real concern is calorie density. Foods containing HFCS are typically highly processed and low in satiety, leading to overeating. Focus on whole foods to keep your insulin levels stable."
+    },
+    {
+        id: 'a-3',
+        title: "Maximizing Muscle Retention During Deficits",
+        category: "FITNESS COACHING",
+        readTime: "4 min read",
+        date: "2 days ago",
+        color: "#5856d6",
+        icon: "barbell-outline",
+        content: "Losing weight without losing your hard-earned muscle requires two key components:\n\n1. Keep Protein High: Target 1.8g to 2.2g of protein per kilogram of body weight daily. This triggers muscle protein synthesis despite the energy shortage.\n2. Prioritize Resistance Training: Do not switch exclusively to cardio. Heavy lifting signals to your body that muscle tissue is essential for survival, forcing it to burn stored fat reserves instead of muscle fiber."
+    }
+]
+
 // ── Home Screen ───────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
     const insets = useSafeAreaInsets()
     const [selectedDate, setSelectedDate] = useState(todayDate())
+    const [selectedArticle, setSelectedArticle] = useState<any>(null)
     
     // Fetch queries filtered by the selected date
     const { data: summary } = useTodaySummary(selectedDate)
@@ -232,6 +266,65 @@ export default function HomeScreen() {
                     </Pressable>
                 ))}
             </Card>
+
+            {/* ── Daily Insights & Verification Blog ── */}
+            <Text style={s.sectionTitle}>VERIFIED DAILY INSIGHTS</Text>
+            <View style={{ gap: 10 }}>
+                {DAILY_ARTICLES.map((article) => (
+                    <Pressable
+                        key={article.id}
+                        onPress={() => setSelectedArticle(article)}
+                        style={({ pressed }) => [s.blogCard, pressed && s.blogPressed]}
+                    >
+                        <View style={[s.blogBadge, { backgroundColor: article.color + '12', borderColor: article.color + '25' }]}>
+                            <Ionicons name={article.icon as any} size={13} color={article.color} />
+                            <Text style={[s.blogBadgeText, { color: article.color }]}>{article.category}</Text>
+                        </View>
+                        <Text style={s.blogTitle}>{article.title}</Text>
+                        <View style={s.blogMetaRow}>
+                            <Text style={s.blogMetaText}>{article.date}  •  {article.readTime}</Text>
+                            <View style={s.verifiedIndicator}>
+                                <Ionicons name="checkmark-done-circle" size={13} color="#34c759" />
+                                <Text style={s.verifiedText}>Verified</Text>
+                            </View>
+                        </View>
+                    </Pressable>
+                ))}
+            </View>
+
+            {/* ── Modal: Article Reader ── */}
+            {selectedArticle && (
+                <Modal visible={!!selectedArticle} animationType="slide" transparent>
+                    <View style={s.articleOverlay}>
+                        <View style={s.articleContainer}>
+                            <View style={s.articleHeader}>
+                                <View style={[s.blogBadge, { backgroundColor: selectedArticle.color + '12', borderColor: selectedArticle.color + '25' }]}>
+                                    <Ionicons name={selectedArticle.icon as any} size={15} color={selectedArticle.color} />
+                                    <Text style={[s.blogBadgeText, { color: selectedArticle.color }]}>{selectedArticle.category}</Text>
+                                </View>
+                                <Pressable onPress={() => setSelectedArticle(null)} style={s.articleCloseBtn}>
+                                    <Ionicons name="close" size={22} color={TEXT_SECONDARY} />
+                                </Pressable>
+                            </View>
+
+                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.articleScrollContent}>
+                                <Text style={s.articleTitleText}>{selectedArticle.title}</Text>
+                                <View style={s.articleMeta}>
+                                    <Text style={s.articleMetaText}>{selectedArticle.date}  •  {selectedArticle.readTime}</Text>
+                                    <View style={s.verifiedIndicator}>
+                                        <Ionicons name="checkmark-done-circle" size={15} color="#34c759" />
+                                        <Text style={[s.verifiedText, { fontSize: 12 }]}>Verified Information</Text>
+                                    </View>
+                                </View>
+                                <View style={s.divider} />
+                                <Text style={s.articleBody}>{selectedArticle.content}</Text>
+                            </ScrollView>
+
+                            <Button label="Got it" size="lg" onPress={() => setSelectedArticle(null)} fullWidth style={{ marginTop: 16 }} />
+                        </View>
+                    </View>
+                </Modal>
+            )}
         </ScrollView>
     )
 }
@@ -454,4 +547,118 @@ const s = StyleSheet.create({
         fontSize: 13,
         color: TEXT_TERTIARY,
     },
+    blogCard: {
+        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: BORDER,
+        borderRadius: 16,
+        padding: 16,
+        gap: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 6,
+    },
+    blogPressed: {
+        opacity: 0.85,
+    },
+    blogBadge: {
+        alignSelf: 'flex-start',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+        borderWidth: 1,
+    },
+    blogBadgeText: {
+        fontSize: 10,
+        fontWeight: '800',
+    },
+    blogTitle: {
+        fontSize: 15,
+        fontWeight: '800',
+        color: TEXT_PRIMARY,
+        lineHeight: 20,
+    },
+    blogMetaRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 2,
+    },
+    blogMetaText: {
+        fontSize: 11.5,
+        color: TEXT_TERTIARY,
+        fontWeight: '500',
+    },
+    verifiedIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    verifiedText: {
+        fontSize: 11,
+        color: '#34c759',
+        fontWeight: '700',
+    },
+    articleOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        justifyContent: 'flex-end',
+    },
+    articleContainer: {
+        backgroundColor: '#ffffff',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 20,
+        paddingBottom: 36,
+        maxHeight: '85%',
+    },
+    articleHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    articleCloseBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#f5f5f7',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    articleScrollContent: {
+        gap: 12,
+    },
+    articleTitleText: {
+        fontSize: 20,
+        fontWeight: '900',
+        color: TEXT_PRIMARY,
+        lineHeight: 26,
+    },
+    articleMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    articleMetaText: {
+        fontSize: 12,
+        color: TEXT_SECONDARY,
+        fontWeight: '500',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: BORDER,
+        marginVertical: 4,
+    },
+    articleBody: {
+        fontSize: 14,
+        lineHeight: 22,
+        color: TEXT_SECONDARY,
+        fontWeight: '500',
+        whiteSpace: 'pre-wrap',
+    } as any,
 })
