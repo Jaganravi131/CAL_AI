@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import {
     ActivityIndicator,
     View,
@@ -7,6 +7,7 @@ import {
     Pressable,
     Modal,
     TextInput,
+    Platform,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -72,9 +73,85 @@ export default function ExploreScreen() {
     const createMealLog = useCreateMealLog()
     const { data: foods = [] } = useFoodSearch(query)
 
+    // Webcam States for Web Browser camera capture support
+    const [isWebCamVisible, setIsWebCamVisible] = useState(false)
+    const [webcamStream, setWebcamStream] = useState<any>(null)
+    const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment')
+    const videoRef = useRef<any>(null)
+    const VideoTag = 'video' as any
+
+    // Clean up webcam streams on unmount or visibility change
+    useEffect(() => {
+        return () => {
+            if (Platform.OS === 'web' && webcamStream) {
+                webcamStream.getTracks().forEach((track: any) => track.stop())
+            }
+        }
+    }, [webcamStream])
+
+    // Webcam stream lifecycle
+    async function startWebcamStream(mode: 'user' | 'environment' = 'environment') {
+        if (webcamStream) {
+            webcamStream.getTracks().forEach((track: any) => track.stop())
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: mode }
+            })
+            setWebcamStream(stream)
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream
+            }
+        } catch (err) {
+            console.error('Webcam stream error:', err)
+            showToast('Unable to access camera. Please allow camera permissions.', 'error')
+            setIsWebCamVisible(false)
+        }
+    }
+
+    function stopWebcam() {
+        if (webcamStream) {
+            webcamStream.getTracks().forEach((track: any) => track.stop())
+            setWebcamStream(null)
+        }
+    }
+
+    async function toggleFacingMode() {
+        const nextMode = facingMode === 'user' ? 'environment' : 'user'
+        setFacingMode(nextMode)
+        await startWebcamStream(nextMode)
+    }
+
+    function captureWebcamPhoto() {
+        if (!videoRef.current) return
+        const video = videoRef.current
+        const canvas = document.createElement('canvas')
+        canvas.width = video.videoWidth || 640
+        canvas.height = video.videoHeight || 480
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85)
+            stopWebcam()
+            setIsWebCamVisible(false)
+            setScanImageUri(dataUrl)
+            setAiDescription('')
+            setIsAiAssistVisible(true)
+        } else {
+            showToast('Failed to capture frame from webcam.', 'error')
+        }
+    }
+
     // Image scan trigger
     async function startScanFlow(source: 'camera' | 'library') {
         try {
+            if (Platform.OS === 'web' && source === 'camera') {
+                setIsWebCamVisible(true)
+                setFacingMode('environment')
+                await startWebcamStream('environment')
+                return
+            }
+
             if (source === 'camera') {
                 const { status } = await ImagePicker.requestCameraPermissionsAsync()
                 if (status !== 'granted') {
@@ -648,6 +725,56 @@ export default function ExploreScreen() {
                     </View>
                 </View>
             </Modal>
+
+            {/* ── Modal 4: Web Camera Modal ── */}
+            {Platform.OS === 'web' && (
+                <Modal visible={isWebCamVisible} animationType="fade" transparent>
+                    <View style={s.webcamOverlay}>
+                        <View style={s.webcamContainer}>
+                            <View style={s.webcamHeader}>
+                                <Text style={s.webcamTitle}>Instant Camera</Text>
+                                <Pressable onPress={() => { stopWebcam(); setIsWebCamVisible(false); }} style={s.webcamCloseBtn}>
+                                    <Ionicons name="close" size={24} color="#ffffff" />
+                                </Pressable>
+                            </View>
+
+                            <View style={s.videoWrapper}>
+                                {webcamStream ? (
+                                    <VideoTag
+                                        ref={videoRef}
+                                        autoPlay
+                                        playsInline
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            borderRadius: 16,
+                                            backgroundColor: '#000000',
+                                        }}
+                                    />
+                                ) : (
+                                    <View style={s.webcamLoader}>
+                                        <ActivityIndicator size="large" color="#ffffff" />
+                                        <Text style={s.webcamLoaderText}>Accessing Camera...</Text>
+                                    </View>
+                                )}
+                            </View>
+
+                            <View style={s.webcamControls}>
+                                <Pressable onPress={toggleFacingMode} style={s.webcamIconBtn}>
+                                    <Ionicons name="camera-reverse" size={24} color="#ffffff" />
+                                </Pressable>
+
+                                <Pressable onPress={captureWebcamPhoto} style={s.shutterBtnOuter}>
+                                    <View style={s.shutterBtnInner} />
+                                </Pressable>
+
+                                <View style={{ width: 44 }} /> {/* Spacer to center the shutter button */}
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+            )}
         </ScrollView>
     )
 }
@@ -1161,5 +1288,95 @@ const s = StyleSheet.create({
     },
     presetTextActive: {
         color: '#ffffff',
+    },
+    webcamOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    webcamContainer: {
+        width: '100%',
+        maxWidth: 500,
+        backgroundColor: '#1c1c1e',
+        borderRadius: 24,
+        padding: 16,
+        gap: 16,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.5,
+        shadowRadius: 20,
+    },
+    webcamHeader: {
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+    },
+    webcamTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#ffffff',
+    },
+    webcamCloseBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    videoWrapper: {
+        width: '100%',
+        aspectRatio: 3 / 4,
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: '#000000',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    webcamLoader: {
+        alignItems: 'center',
+        gap: 10,
+    },
+    webcamLoaderText: {
+        fontSize: 14,
+        color: 'rgba(255,255,255,0.6)',
+        fontWeight: '500',
+    },
+    webcamControls: {
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+    },
+    webcamIconBtn: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    shutterBtnOuter: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        borderWidth: 4,
+        borderColor: '#ffffff',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    shutterBtnInner: {
+        width: 54,
+        height: 54,
+        borderRadius: 27,
+        backgroundColor: '#ffffff',
     },
 })
