@@ -10,6 +10,8 @@ import { useTodaySummary } from '@/hooks/useNutrition'
 import { useProfile } from '@/hooks/useProfile'
 import { TAB_BAR_HEIGHT } from '@/components/TabBar'
 import { getCurrentLocale } from '@/lib/i18n'
+import { useTranslation } from 'react-i18next'
+import { translateText } from '@/lib/translator'
 
 type Message = { id: string; text: string; author: 'user' | 'assistant'; isSpeaking?: boolean }
 
@@ -28,17 +30,45 @@ export default function AssistantScreen() {
   const recognitionRef = useRef<any>(null)
 
   const firstName = (profile?.fullName ?? '').split(' ')[0] || 'there'
+  const { i18n } = useTranslation()
+  const prevLangRef = useRef(i18n.language)
 
-  // Initialize with greeting
+  // Initialize and translate greeting or history
   useEffect(() => {
-    setMessages([
-      {
-        id: 'greet',
-        text: `Hi ${firstName}! I'm your Cal AI nutrition coach. 🍎\n\nAsk me "How am I doing today?", "List high protein foods", or click the 🎙️ mic button below to talk to me!`,
-        author: 'assistant',
-      },
-    ])
-  }, [firstName])
+    const lang = i18n.language || 'en'
+
+    if (messages.length === 0) {
+      const initGreeting = async () => {
+        const baseText = `Hi ${firstName}! I'm your Cal AI nutrition coach. 🍎\n\nAsk me "How am I doing today?", "List high protein foods", or click the 🎙️ mic button below to talk to me!`
+        const text = lang === 'en' ? baseText : await translateText(baseText, lang)
+        setMessages([
+          {
+            id: 'greet',
+            text,
+            author: 'assistant',
+          },
+        ])
+      }
+      initGreeting()
+      prevLangRef.current = lang
+      return
+    }
+
+    if (lang !== prevLangRef.current) {
+      const oldLang = prevLangRef.current
+      prevLangRef.current = lang
+      const translateAll = async () => {
+        const translated = await Promise.all(
+          messages.map(async (msg) => {
+            const translatedText = await translateText(msg.text, lang)
+            return { ...msg, text: translatedText }
+          })
+        )
+        setMessages(translated)
+      }
+      translateAll()
+    }
+  }, [firstName, i18n.language, messages.length])
 
   // Stop synthesis on unmount
   useEffect(() => {
@@ -69,10 +99,11 @@ export default function AssistantScreen() {
     const utterance = new SpeechSynthesisUtterance(cleanText)
     
     // Choose a voice if available
+    const currentLocale = getCurrentLocale()
     const voices = window.speechSynthesis.getVoices()
     const preferredVoice = voices.find(
-      (v) => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural'))
-    )
+      (v) => v.lang.startsWith(currentLocale) && (v.name.includes('Google') || v.name.includes('Natural'))
+    ) || voices.find((v) => v.lang.startsWith(currentLocale))
     if (preferredVoice) utterance.voice = preferredVoice
 
     utterance.onend = () => {
@@ -112,7 +143,16 @@ export default function AssistantScreen() {
     
     recognition.continuous = false
     recognition.interimResults = false
-    recognition.lang = 'en-US'
+    
+    const currentLocale = getCurrentLocale()
+    const localeToLang: Record<string, string> = {
+      en: 'en-US',
+      es: 'es-ES',
+      fr: 'fr-FR',
+      de: 'de-DE',
+      hi: 'hi-IN',
+    }
+    recognition.lang = localeToLang[currentLocale] ?? 'en-US'
 
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript
