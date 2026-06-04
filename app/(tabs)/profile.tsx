@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, ScrollView, StyleSheet, Pressable, DeviceEventEmitter } from 'react-native'
+import { View, ScrollView, StyleSheet, Pressable, DeviceEventEmitter, Modal } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -16,6 +16,8 @@ import { adjustBrightness } from '@/lib/utils'
 import {
     ACCENT,
     ACCENT_BORDER,
+    BORDER,
+    SURFACE,
     BG,
     TEXT_PRIMARY,
     TEXT_SECONDARY,
@@ -24,14 +26,19 @@ import {
 import { TAB_BAR_CLEARANCE } from '@/components/TabBar'
 import { demoUser } from '@/lib/mockData'
 import { useProfile } from '@/hooks/useProfile'
+import { useTranslation } from 'react-i18next'
+import { getCurrentLocale, setLanguage, localeNames, SUPPORTED_LOCALES, type Locale } from '@/lib/i18n'
 
 export default function ProfileScreen() {
     const insets = useSafeAreaInsets()
+    const { t } = useTranslation()
+    const currentLocale = getCurrentLocale()
     const { isPremium, customerInfo } = useSubscription()
     const { data: profile } = useProfile()
     const [signOutModal, setSignOutModal] = useState(false)
     const [signingOut, setSigningOut] = useState(false)
     const [errorModal, setErrorModal] = useState<string | null>(null)
+    const [languageModalVisible, setLanguageModalVisible] = useState(false)
 
     const expiryMs = customerInfo?.entitlements.active['premium']?.expirationDate
     const expiryDate = expiryMs
@@ -118,10 +125,11 @@ export default function ProfileScreen() {
 
             <Text style={s.sectionTitle}>Account</Text>
             <Card compact style={s.sectionCard}>
+                <SettingsRow icon="globe-outline" label={t('Profile.language')} value={localeNames[currentLocale]} onPress={() => setLanguageModalVisible(true)} />
                 <SettingsRow icon="settings-outline" label="Settings" onPress={() => router.push('/settings')} />
                 <SettingsRow icon="help-buoy-outline" label="Support" onPress={() => router.push('/support')} />
-                <SettingsRow icon="document-text-outline" label="Privacy Policy" onPress={() => router.push('/privacy')} />
-                <SettingsRow icon="shield-checkmark-outline" label="Terms of Service" onPress={() => router.push('/terms')} last={true} />
+                <SettingsRow icon="document-text-outline" label={t('Profile.privacy')} onPress={() => router.push('/privacy')} />
+                <SettingsRow icon="shield-checkmark-outline" label={t('Profile.terms')} onPress={() => router.push('/terms')} last={true} />
             </Card>
 
             <Pressable
@@ -130,16 +138,16 @@ export default function ProfileScreen() {
                 style={({ pressed }) => [s.signOutBtn, (pressed || signingOut) && { opacity: 0.72 }]}
             >
                 <Ionicons name="log-out-outline" size={17} color="#ff3b30" />
-                <Text style={s.signOutText}>{signingOut ? 'Signing out…' : 'Sign out'}</Text>
+                <Text style={s.signOutText}>{signingOut ? `${t('Profile.signOut')}...` : t('Profile.signOut')}</Text>
             </Pressable>
 
             <AlertModal
                 visible={signOutModal}
-                title="Sign out"
-                message="You will be signed out of your account."
+                title={t('Profile.signOutTitle')}
+                message={t('Profile.signOutSubtitle')}
                 buttons={[
-                    { text: 'Cancel', style: 'cancel', onPress: () => setSignOutModal(false) },
-                    { text: 'Sign out', style: 'destructive', onPress: () => { setSignOutModal(false); handleSignOut() } },
+                    { text: t('Common.cancel'), style: 'cancel', onPress: () => setSignOutModal(false) },
+                    { text: t('Profile.signOutConfirm'), style: 'destructive', onPress: () => { setSignOutModal(false); handleSignOut() } },
                 ]}
                 onDismiss={() => setSignOutModal(false)}
             />
@@ -151,6 +159,42 @@ export default function ProfileScreen() {
                 buttons={[{ text: 'OK', onPress: () => setErrorModal(null) }]}
                 onDismiss={() => setErrorModal(null)}
             />
+
+            <Modal visible={languageModalVisible} animationType="slide" transparent>
+                <View style={s.modalOverlay}>
+                    <View style={s.modalSheet}>
+                        <View style={s.modalHeader}>
+                            <Text style={s.modalTitle}>{t('Profile.language')}</Text>
+                            <Pressable onPress={() => setLanguageModalVisible(false)}>
+                                <Ionicons name="close" size={22} color={TEXT_SECONDARY} />
+                            </Pressable>
+                        </View>
+
+                        <View style={{ gap: 10, marginTop: 8 }}>
+                            {SUPPORTED_LOCALES.map((locale) => {
+                                const active = locale === currentLocale
+                                return (
+                                    <Pressable
+                                        key={locale}
+                                        onPress={async () => {
+                                            await setLanguage(locale)
+                                            setLanguageModalVisible(false)
+                                        }}
+                                        style={[s.langOptionRow, active && s.langOptionActive]}
+                                    >
+                                        <Text style={[s.langOptionText, active && s.langOptionTextActive]}>
+                                            {localeNames[locale]}
+                                        </Text>
+                                        {active && (
+                                            <Ionicons name="checkmark-circle" size={20} color="#000000" />
+                                        )}
+                                    </Pressable>
+                                )
+                            })}
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
     )
 }
@@ -246,4 +290,50 @@ const s = StyleSheet.create({
         marginTop: 12,
     },
     signOutText: { color: '#ff3b30', fontSize: 14, fontWeight: '600' },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        justifyContent: 'flex-end',
+    },
+    modalSheet: {
+        backgroundColor: SURFACE,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 20,
+        paddingBottom: 36,
+        gap: 14,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: TEXT_PRIMARY,
+    },
+    langOptionRow: {
+        padding: 14,
+        borderRadius: 12,
+        backgroundColor: '#f5f5f7',
+        borderWidth: 1,
+        borderColor: BORDER,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    langOptionActive: {
+        backgroundColor: 'rgba(0,0,0,0.04)',
+        borderColor: '#000000',
+    },
+    langOptionText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: TEXT_PRIMARY,
+    },
+    langOptionTextActive: {
+        color: '#000000',
+        fontWeight: '700',
+    },
 })

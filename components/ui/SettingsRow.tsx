@@ -9,9 +9,10 @@ interface SettingsRowProps {
     onPress: () => void
     last?: boolean
     style?: ViewStyle
+    value?: string
 }
 
-export default function SettingsRow({ icon, label, onPress, last, style }: SettingsRowProps) {
+export default function SettingsRow({ icon, label, onPress, last, style, value }: SettingsRowProps) {
     return (
         <Pressable
             onPress={onPress}
@@ -19,6 +20,7 @@ export default function SettingsRow({ icon, label, onPress, last, style }: Setti
         >
             <Ionicons name={icon as any} size={18} color={TEXT_SECONDARY} />
             <Text style={s.label}>{label}</Text>
+            {value && <Text style={s.value}>{value}</Text>}
             <Ionicons name="chevron-forward" size={15} color={TEXT_TERTIARY} />
         </Pressable>
     )
@@ -40,5 +42,10 @@ const s = StyleSheet.create({
         flex: 1,
         fontSize: 14.5,
         color: TEXT_PRIMARY,
+    },
+    value: {
+        fontSize: 13.5,
+        color: TEXT_SECONDARY,
+        marginRight: 2,
     },
 })

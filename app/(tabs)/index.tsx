@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { View, ScrollView, StyleSheet, Pressable, Modal } from 'react-native'
+import { useTranslation } from 'react-i18next'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -89,6 +90,7 @@ const DAILY_ARTICLES = [
 
 export default function HomeScreen() {
     const insets = useSafeAreaInsets()
+    const { t } = useTranslation()
     const [selectedDate, setSelectedDate] = useState(todayDate())
     const [selectedArticle, setSelectedArticle] = useState<any>(null)
     
@@ -117,9 +119,9 @@ export default function HomeScreen() {
     // Greeting
     const greeting = (() => {
         const h = new Date().getHours()
-        if (h < 12) return 'Good morning'
-        if (h < 17) return 'Good afternoon'
-        return 'Good evening'
+        if (h < 12) return t('Home.greeting_morning')
+        if (h < 17) return t('Home.greeting_afternoon')
+        return t('Home.greeting_evening')
     })()
 
     const firstName = (profile?.fullName ?? '').split(' ')[0]

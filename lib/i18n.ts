@@ -4,17 +4,22 @@ import * as Localization from 'expo-localization'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import en from '../locales/en.json'
-// TODO: add more languages by importing their JSON and adding to `resources`
-// import es from '../locales/es.json'
+import es from '../locales/es.json'
+import fr from '../locales/fr.json'
+import de from '../locales/de.json'
+import hi from '../locales/hi.json'
 
 const LANG_KEY = 'app_language'
 
-export const SUPPORTED_LOCALES = ['en'] as const
+export const SUPPORTED_LOCALES = ['en', 'es', 'fr', 'de', 'hi'] as const
 export type Locale = typeof SUPPORTED_LOCALES[number]
 
 export const localeNames: Record<Locale, string> = {
   en: 'English',
-  // es: 'Español',
+  es: 'Español',
+  fr: 'Français',
+  de: 'Deutsch',
+  hi: 'हिन्दी',
 }
 
 let _initialized = false
@@ -32,7 +37,10 @@ export async function initI18n() {
   await i18n.use(initReactI18next).init({
     resources: {
       en: { translation: en },
-      // es: { translation: es },
+      es: { translation: es },
+      fr: { translation: fr },
+      de: { translation: de },
+      hi: { translation: hi },
     },
     lng:           initial,
     fallbackLng:   'en',
