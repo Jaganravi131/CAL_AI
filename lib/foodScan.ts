@@ -1,4 +1,6 @@
 import { supabaseFunctionUrl, isSupabaseEnabled } from '@/lib/supabase'
+import * as FileSystem from 'expo-file-system'
+import { Platform } from 'react-native'
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
 
@@ -32,6 +34,17 @@ async function uriToBase64(uri: string): Promise<string> {
     return uri
   }
   try {
+    // Native mobile platforms (iOS/Android)
+    if (Platform.OS !== 'web') {
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      })
+      const extension = uri.split('.').pop()?.toLowerCase() ?? 'jpeg'
+      const mime = extension === 'png' ? 'image/png' : 'image/jpeg'
+      return `data:${mime};base64,${base64}`
+    }
+
+    // Web browser fallback
     const response = await fetch(uri)
     const blob = await response.blob()
     return new Promise((resolve, reject) => {
@@ -145,6 +158,17 @@ export function parseLocalDescription(description: string, mealType: MealType): 
   }
 }
 
+function extractJson(text: string): string {
+  const match = text.match(/```json\s*([\s\S]*?)\s*```/)
+  if (match) return match[1].trim()
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+  if (start !== -1 && end !== -1 && end > start) {
+    return text.slice(start, end + 1).trim()
+  }
+  return text.trim()
+}
+
 export async function scanFoodPhoto(input: {
   imageUri: string
   mealType: MealType
@@ -202,6 +226,7 @@ export async function scanFoodPhoto(input: {
 
   // Client-side Groq Vision Integration (Real Multimodal AI Analysis)
   try {
+    const apiKey = process.env.EXPO_PUBLIC_GROQ_API_KEY || GROQ_API_KEY || ''
     const base64Image = await uriToBase64(input.imageUri)
     const contextPrompt = input.description ? ` The user describes the food as: "${input.description}".` : ''
 
@@ -235,7 +260,7 @@ Only return the raw JSON object. Do not include markdown code block formatting (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${GROQ_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: GROQ_VISION_MODEL,
@@ -267,7 +292,8 @@ Only return the raw JSON object. Do not include markdown code block formatting (
 
     const data = await response.json()
     const rawContent = data.choices?.[0]?.message?.content ?? ''
-    const parsed = JSON.parse(rawContent)
+    const cleaned = extractJson(rawContent)
+    const parsed = JSON.parse(cleaned)
 
     return {
       mealType: input.mealType,
